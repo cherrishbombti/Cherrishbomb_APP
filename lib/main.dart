@@ -118,7 +118,23 @@ class WardRegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('피보호자 등록')),
+      appBar: AppBar(
+        title: const Text('피보호자 등록'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: '로그아웃',
+            onPressed: () async {
+              await AuthService.logout();
+              if (!context.mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: const Center(child: Text('피보호자 등록 화면 (이슈 4에서 구현)')),
     );
   }
