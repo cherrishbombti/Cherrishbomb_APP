@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // PlatformException 사용
 import 'services/auth_service.dart';
 import 'services/token_storage.dart';
 
@@ -89,9 +90,17 @@ class _LoginPageState extends State<LoginPage> {
               result.isNewUser ? const WardRegisterPage() : const HomePage(),
         ),
       );
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      // 사용자가 로그인 창을 그냥 닫음(취소) → 에러 아님, 조용히 넘김
+      if (e.code == 'CANCELED') return;
+      // 그 외 플랫폼 오류만 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('로그인 실패: ${e.message ?? e.code}')),
+      );
     } catch (e) {
       if (!mounted) return;
-      // 실패하면 하단에 에러 메시지 표시
+      // 그 밖의 오류 표시
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('로그인 실패: $e')));
