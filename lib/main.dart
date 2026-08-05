@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+// 화면 밖(통신 코드 등)에서도 화면 이동을 할 수 있게 하는 전역 리모컨.
+final navigatorKey = GlobalKey<NavigatorState>();
+
 // 앱의 시작점. 여기서 앱 전체를 실행한다.
 void main() {
   runApp(const CherrishbombApp());
@@ -12,6 +15,7 @@ class CherrishbombApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // 전역 리모컨 연결 (401 시 화면 이동에 사용)
       title: '낙상감지 핫 라인 시스템',
       // 앱 전체의 기본 색/폰트 테마
       theme: ThemeData(
