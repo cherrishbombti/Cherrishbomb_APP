@@ -6,8 +6,9 @@ import '../main.dart'; // navigatorKey, LoginPage 사용
 
 /// 앱 전체가 공유하는 서버 통신 창구. (웹 axiosInstance.ts 대응)
 class ApiClient {
-  // 앱 어디서나 ApiClient.dio 로 같은 통신 객체를 사용 (싱글톤)
-  static final Dio dio = _create();
+  // 앱 어디서나 ApiClient.dio 로 같은 통신 객체를 사용 (싱글톤).
+  // final을 빼서 테스트 시 mock으로 교체 가능하게 함 (ApiClient.dio = mockDio).
+  static Dio dio = _create();
 
   // 401로 인한 로그인 이동이 동시에 여러 번 실행되지 않도록 막는 플래그
   static bool _redirecting = false;
