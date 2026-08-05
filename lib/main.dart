@@ -164,20 +164,7 @@ class WardRegisterPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('피보호자 등록'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: '로그아웃',
-            onPressed: () async {
-              await AuthService.logout();
-              if (!context.mounted) return;
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-          ),
-        ],
+        actions: const [LogoutButton()],
       ),
       body: const Center(child: Text('피보호자 등록 화면 (이슈 4에서 구현)')),
     );
@@ -193,25 +180,33 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('홈'),
-        actions: [
-          // 로그아웃 버튼: 토큰 삭제 후 로그인 화면으로
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: '로그아웃',
-            onPressed: () async {
-              await AuthService.logout();
-              if (!context.mounted) return;
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-          ),
-        ],
+        actions: const [LogoutButton()],
       ),
       body: const Center(
         child: Text('로그인 성공! 홈 화면입니다.', style: TextStyle(fontSize: 18)),
       ),
+    );
+  }
+}
+
+// 여러 화면에서 재사용하는 로그아웃 버튼.
+// 토큰 삭제 후 로그인 화면으로 이동한다.
+class LogoutButton extends StatelessWidget {
+  const LogoutButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.logout),
+      tooltip: '로그아웃',
+      onPressed: () async {
+        await AuthService.logout();
+        if (!context.mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+        );
+      },
     );
   }
 }
