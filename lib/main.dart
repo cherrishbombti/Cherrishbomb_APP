@@ -204,19 +204,25 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
         address: _address.text.trim(),
         phone: _phone.text.trim(),
         relationship: _relationship ?? '',
-        deviceMac: _deviceMac.text.trim(),
+        deviceMac: _deviceMac.text.trim().toUpperCase(), // MAC 대문자로 통일
       );
       if (!mounted) return;
-      // 등록 성공 → 홈으로 (뒤로가기로 등록 화면 못 돌아오게 pushReplacement)
+      // 등록 성공 안내 (루트 ScaffoldMessenger라 화면 전환 후에도 표시됨)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('피보호자 등록이 완료되었습니다.')),
+      );
+      // 홈으로 (뒤로가기로 등록 화면 못 돌아오게 pushReplacement)
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePage()),
       );
     } catch (e) {
+      debugPrint('피보호자 등록 실패: $e'); // 상세 에러는 개발자 로그에만
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+      // 사용자에겐 일반 안내 문구 (예외 전문 노출 안 함)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('등록에 실패했습니다. 입력값을 확인하고 다시 시도해주세요.')),
+      );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -242,8 +248,27 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
                 '생년월일 (YYYY-MM-DD)',
                 keyboardType: TextInputType.number,
                 inputFormatters: [_DashFormatter([4, 2, 2])], // 20000101 → 2000-01-01
-                pattern: r'^\d{4}-\d{2}-\d{2}$',
+                // 월 01~12, 일 01~31 범위 (정규식만으로는 2월 30일 등은 못 거름)
+                pattern: r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$',
                 patternMsg: '생년월일 형식이 올바르지 않습니다. (예: 2000-01-01)',
+                // 실제 존재하는 날짜인지 + 미래 날짜 아닌지 검증
+                extraCheck: (v) {
+                  final parts = v.split('-'); // [연, 월, 일]
+                  final date = DateTime.tryParse(v);
+                  // 파싱은 되지만 2월 30일처럼 굴러간 날짜면 월/일이 안 맞음
+                  if (date == null ||
+                      date.month != int.parse(parts[1]) ||
+                      date.day != int.parse(parts[2])) {
+                    return '존재하지 않는 날짜입니다.';
+                  }
+                  if (date.isAfter(DateTime.now())) {
+                    return '미래 날짜는 입력할 수 없습니다.';
+                  }
+                  if (date.year < 1900) {
+                    return '생년월일을 다시 확인해주세요.';
+                  }
+                  return null;
+                },
               ),
               _field(_address, '주소', required: true),
               _field(
@@ -268,13 +293,16 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
                       .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                       .toList(),
                   onChanged: (value) => setState(() => _relationship = value),
+                  // 관계는 필수 — 안 고르면 등록 막음
+                  validator: (value) => value == null ? '관계를 선택해주세요' : null,
                 ),
               ),
               _field(
                 _deviceMac,
                 '기기 MAC 주소 (AA:BB:CC:DD:EE:FF)',
                 required: true,
-                pattern: r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$',
+                inputFormatters: [_MacFormatter()], // 16진수만, 2자리마다 ':' 자동 삽입 + 대문자
+                pattern: r'^([0-9A-F]{2}:){5}[0-9A-F]{2}$',
                 patternMsg: 'MAC 주소 형식이 올바르지 않습니다. (예: AA:BB:CC:DD:EE:FF)',
               ),
               const SizedBox(height: 24),
@@ -300,6 +328,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
     String? patternMsg,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    String? Function(String value)? extraCheck, // 형식 통과 후 추가 검증(선택)
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -316,6 +345,10 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
           if (required && v.isEmpty) return '$label 입력해주세요';
           if (pattern != null && v.isNotEmpty && !RegExp(pattern).hasMatch(v)) {
             return patternMsg;
+          }
+          if (extraCheck != null && v.isNotEmpty) {
+            final msg = extraCheck(v);
+            if (msg != null) return msg;
           }
           return null; // 통과
         },
@@ -350,6 +383,34 @@ class _DashFormatter extends TextInputFormatter {
       final end = (idx + groups[i]).clamp(0, trimmed.length);
       buffer.write(trimmed.substring(idx, end));
       idx = end;
+    }
+
+    final text = buffer.toString();
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length), // 커서 맨 뒤로
+    );
+  }
+}
+
+// MAC 주소 자동 형식 포매터.
+// 16진수(0-9, A-F)만 받고 대문자로 바꾼 뒤, 2자리마다 ':'를 넣어준다.
+// 예) aabbccddeeff → AA:BB:CC:DD:EE:FF
+class _MacFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // 16진수만 남기고 대문자화, 최대 12자(6쌍)
+    var hex = newValue.text.toUpperCase().replaceAll(RegExp(r'[^0-9A-F]'), '');
+    if (hex.length > 12) hex = hex.substring(0, 12);
+
+    // 2자리마다 ':' 삽입
+    final buffer = StringBuffer();
+    for (int i = 0; i < hex.length; i++) {
+      if (i > 0 && i % 2 == 0) buffer.write(':');
+      buffer.write(hex[i]);
     }
 
     final text = buffer.toString();
