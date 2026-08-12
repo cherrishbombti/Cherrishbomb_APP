@@ -1,7 +1,21 @@
 import 'api_client.dart';
+import '../models/ward_summary.dart';
+import '../models/ward_sensor.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
 class WardService {
+  /// 피보호자 상태 요약 조회. GET /api/wards/me/summary
+  static Future<WardSummary> getSummary() async {
+    final res = await ApiClient.dio.get('/api/wards/me/summary');
+    return WardSummary.fromJson(res.data);
+  }
+
+  /// 낙상감지 센서 상태 조회. GET /api/wards/me/sensors
+  static Future<WardSensor> getSensors() async {
+    final res = await ApiClient.dio.get('/api/wards/me/sensors');
+    return WardSensor.fromJson(res.data);
+  }
+
   /// 피보호자 등록. POST /api/wards/me
   static Future<void> registerWard({
     required String name,

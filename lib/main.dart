@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // PlatformException 사용
+import 'package:url_launcher/url_launcher.dart'; // 전화 걸기
 import 'services/auth_service.dart';
 import 'services/token_storage.dart';
 import 'services/ward_service.dart';
+import 'models/ward_summary.dart';
+import 'models/ward_sensor.dart';
 
 // 화면 밖(통신 코드 등)에서도 화면 이동을 할 수 있게 하는 전역 리모컨.
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -422,20 +425,267 @@ class _MacFormatter extends TextInputFormatter {
 }
 
 // 임시 홈 화면. 로그인 성공 후 보여줄 화면 (지금은 뼈대만).
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _loading = true; // 데이터 불러오는 중
+  String? _error; // 에러 메시지 (없으면 null)
+  WardSummary? _summary;
+  WardSensor? _sensor;
+
+  @override
+  void initState() {
+    super.initState();
+    _load(); // 화면 뜨자마자 데이터 불러오기
+  }
+
+  // 요약 + 센서 데이터를 서버에서 불러온다.
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final summary = await WardService.getSummary();
+      final sensor = await WardService.getSensors();
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+        _sensor = sensor;
+        _loading = false;
+      });
+    } catch (e) {
+      debugPrint('홈 데이터 로드 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _error = '정보를 불러오지 못했습니다.';
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('홈'),
+        title: const Text('보호자 모드'),
         actions: const [LogoutButton()],
       ),
-      body: const Center(
-        child: Text('로그인 성공! 홈 화면입니다.', style: TextStyle(fontSize: 18)),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    // 상태 1: 로딩 중
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    // 상태 2: 실패
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_error!),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: _load, child: const Text('다시 시도')),
+          ],
+        ),
+      );
+    }
+    // 상태 3: 성공 — 데이터 표시 (아래로 당기면 새로고침)
+    final s = _summary!;
+    final sensor = _sensor!;
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text(
+            '현재 안전 상태 요약',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '실시간으로 확인하는 어르신의 안전 상태입니다',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          _statusCard(s),
+          const SizedBox(height: 16),
+          _sensorCard(sensor),
+        ],
       ),
     );
+  }
+
+  // 상태 카드 (색상 + 이름/관계 + 전화 걸기 버튼)
+  Widget _statusCard(WardSummary s) {
+    final (color, label, icon) = _statusStyle(s.status);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.shade200),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color,
+                child: Icon(icon, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: color.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text('${s.relationship} (${s.wardName})'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _callPhone(s.phone),
+              icon: const Icon(Icons.call),
+              label: const Text('전화 걸기'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  (MaterialColor, String, IconData) _statusStyle(String status) {
+    switch (status) {
+      case 'DANGER':
+        return (Colors.red, '위험', Icons.warning);
+      case 'WARNING':
+        return (Colors.orange, '주의', Icons.error_outline);
+      case 'SAFE':
+      default:
+        return (Colors.green, '안전', Icons.check_circle);
+    }
+  }
+
+  // 낙상 감지 센서 카드
+  Widget _sensorCard(WardSensor sensor) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  '낙상 감지 센서',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                _connBadge(sensor.deviceOnline),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // TODO: 배터리·신호·위치 — 백엔드 미제공, 임시 mock 값. 제공되면 실제값으로 교체.
+            Row(
+              children: [
+                Expanded(child: _stat('배터리', '92%')),
+                Expanded(child: _stat('신호', '강함')),
+                Expanded(child: _stat('위치', '집 (침실)')),
+              ],
+            ),
+            const Divider(height: 24),
+            // TODO: 임시 mock — 모두 정상 표시. 백엔드 연동 시 sensor.vibrator/radar/thermal 로 교체.
+            _sensorRow('진동 센서', true),
+            _sensorRow('레이더 센서', true),
+            _sensorRow('열화상 센서', true),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 기기 연결 배지
+  Widget _connBadge(bool online) {
+    final c = online ? Colors.green : Colors.grey;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        online ? '연결됨' : '연결 안 됨',
+        style: TextStyle(fontSize: 12, color: c.shade700),
+      ),
+    );
+  }
+
+  // 준비중 통계 자리
+  Widget _stat(String label, String value) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _sensorRow(String label, bool ok) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            ok ? Icons.check_circle : Icons.cancel,
+            color: ok ? Colors.green : Colors.red,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(label),
+          const Spacer(),
+          Text(
+            ok ? '정상' : '이상',
+            style: TextStyle(color: ok ? Colors.green : Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 전화 걸기 — 전화 앱을 연다.
+  Future<void> _callPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('전화를 걸 수 없습니다.')),
+      );
+    }
   }
 }
 
