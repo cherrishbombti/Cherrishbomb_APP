@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import '../config/api_config.dart';
 import 'token_storage.dart';
-import '../main.dart'; // navigatorKey, LoginPage 사용
+import '../core/app_globals.dart'; // navigatorKey
 
 /// 앱 전체가 공유하는 서버 통신 창구. (웹 axiosInstance.ts 대응)
 class ApiClient {
@@ -44,8 +43,9 @@ class ApiClient {
           if (error.response?.statusCode == 401 && !_redirecting) {
             _redirecting = true;
             await TokenStorage.deleteToken();
-            navigatorKey.currentState?.pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const LoginPage()),
+            // named route '/login'으로 이동 (화면 클래스를 직접 import 안 함 → 결합도↓)
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              '/login',
               (route) => false, // 이전 화면 스택을 모두 비움
             );
           }
