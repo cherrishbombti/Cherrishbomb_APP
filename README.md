@@ -1,17 +1,83 @@
-# cherrishbomb_app
+# Cherrishbomb App (보호자 앱)
 
-A new Flutter project.
+낙상감지 시스템의 **보호자 전용 모바일 앱** (Flutter). 기존 웹의 보호자 기능을 앱으로 이관.
+백엔드(Spring Boot)는 기존 서버를 그대로 사용한다.
 
-## Getting Started
+## 기술 스택
 
-This project is a starting point for a Flutter application.
+- Flutter 3.44 / Dart 3.12
+- dio (HTTP 통신), flutter_secure_storage (토큰 보관)
+- flutter_web_auth_2 (소셜 로그인), url_launcher (전화 걸기)
 
-A few resources to get you started if this is your first Flutter project:
+## 폴더 구조
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```
+lib/
+├── main.dart                # 앱 진입점 + MaterialApp (라우팅)
+├── core/
+│   └── app_globals.dart     # 전역 navigatorKey
+├── config/
+│   └── api_config.dart      # 서버 baseUrl (dart-define 주입)
+├── models/                  # 서버 응답 데이터 모델
+│   ├── ward_summary.dart
+│   └── ward_sensor.dart
+├── services/                # 통신·비즈니스 로직
+│   ├── api_client.dart      # 공용 dio 클라이언트 (토큰 자동 첨부, 401 처리)
+│   ├── token_storage.dart   # 토큰 저장/조회/삭제
+│   ├── auth_service.dart    # 소셜 로그인 / 로그아웃
+│   └── ward_service.dart    # 피보호자 등록·요약·센서 API
+├── screens/                 # 화면
+│   ├── splash_page.dart     # 시작 시 토큰 확인 → 홈/로그인 분기
+│   ├── login_page.dart      # 소셜 로그인
+│   ├── ward_register_page.dart  # 피보호자 등록 폼
+│   └── home_page.dart       # 보호자 모드(상태 요약 + 센서)
+├── widgets/
+│   └── logout_button.dart   # 공용 로그아웃 버튼
+└── utils/
+    └── input_formatters.dart  # 전화/생년월일/MAC 입력 자동 형식
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+> 한 파일은 200줄 이내를 기준으로 관리한다.
+
+## 실행 방법
+
+### 준비
+```bash
+flutter pub get
+```
+
+### iOS 시뮬레이터
+`flutter run`은 현재 Xcode 버전의 codesign 이슈로 실패하므로 **Xcode + attach** 방식을 사용한다.
+1. `open ios/Runner.xcworkspace` → Signing Team을 본인 Apple ID로 설정 → ▶ 실행
+2. Xcode 콘솔에서 Dart VM 주소 확인
+3. `flutter attach --debug-url=<주소>` → hot reload(`r`) 사용
+
+### 크롬 (빠른 개발용)
+```bash
+flutter run -d chrome
+```
+
+### 서버 주소 주입 (선택)
+```bash
+flutter run --dart-define=API_BASE_URL=https://api.example.com
+```
+미지정 시 기본값 `http://localhost:8080`.
+
+## 백엔드 연동
+
+- 소셜 로그인(OAuth)은 백엔드가 처리 후 `cherrishbomb://login`으로 앱에 복귀 (state=app)
+- 인증은 JWT 토큰 (요청 시 `Authorization: Bearer` 자동 첨부)
+
+## 진행 현황 (이슈)
+
+- [x] #1 로그인 화면 UI
+- [x] #2 API 통신 레이어
+- [x] #3 소셜 로그인(OAuth) + 로그아웃
+- [x] #4 피보호자 등록 화면
+- [~] #5 홈(보호자 모드) — 상태 요약·센서 (일부 mock, 백엔드 연동 대기)
+- [ ] #6 비상 연락처 관리
+
+## 알려진 제약
+
+- 배터리·신호·위치, 센서(진동/레이더/열화상) 상태는 백엔드 미제공이라 임시 mock 표시 (TODO 주석).
+- 활동 시간 등 미구현 항목은 화면에서 제외.
