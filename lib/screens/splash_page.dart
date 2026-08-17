@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/token_storage.dart';
-import 'home_page.dart';
+import 'main_shell.dart';
 import 'login_page.dart';
 
 /// 앱 시작 시 저장된 토큰을 확인해 첫 화면을 정하는 화면.
@@ -25,7 +25,7 @@ class _SplashPageState extends State<SplashPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => token != null ? const HomePage() : const LoginPage(),
+        builder: (_) => token != null ? const MainShell() : const LoginPage(),
       ),
     );
   }

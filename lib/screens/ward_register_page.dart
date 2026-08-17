@@ -3,7 +3,7 @@ import 'package:flutter/services.dart'; // TextInputFormatter, TextInputType
 import '../services/ward_service.dart';
 import '../utils/input_formatters.dart';
 import '../widgets/logout_button.dart';
-import 'home_page.dart';
+import 'main_shell.dart';
 
 /// 피보호자 등록 화면. 6개 항목을 입력받아 서버에 등록한다.
 class WardRegisterPage extends StatefulWidget {
@@ -63,7 +63,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
       // 홈으로 (뒤로가기로 등록 화면 못 돌아오게 pushReplacement)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
+        MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } catch (e) {
       debugPrint('피보호자 등록 실패: $e'); // 상세 에러는 개발자 로그에만
