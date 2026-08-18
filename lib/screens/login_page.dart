@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // PlatformException 사용
+import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
-import 'main_shell.dart';
-import 'ward_register_page.dart';
 
 /// 로그인 화면. 로딩 상태가 바뀌므로 StatefulWidget.
 class LoginPage extends StatefulWidget {
@@ -22,14 +21,8 @@ class _LoginPageState extends State<LoginPage> {
       final result = await AuthService.login(provider);
       if (!mounted) return; // 화면이 이미 사라졌으면 중단
       // 신규 사용자면 피보호자 등록 화면, 기존이면 홈으로.
-      // pushReplacement: 로그인 화면을 치우고 새 화면으로 (뒤로가기로 로그인 못 돌아오게)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              result.isNewUser ? const WardRegisterPage() : const MainShell(),
-        ),
-      );
+      // context.go: 스택을 갈아끼워 뒤로가기로 로그인에 못 돌아오게 함
+      context.go(result.isNewUser ? '/register' : '/home');
     } on PlatformException catch (e) {
       if (!mounted) return;
       // 사용자가 로그인 창을 그냥 닫음(취소) → 에러 아님, 조용히 넘김

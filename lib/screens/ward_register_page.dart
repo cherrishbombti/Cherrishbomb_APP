@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // TextInputFormatter, TextInputType
+import 'package:go_router/go_router.dart';
 import '../services/ward_service.dart';
 import '../utils/input_formatters.dart';
 import '../widgets/logout_button.dart';
-import 'main_shell.dart';
 
 /// 피보호자 등록 화면. 6개 항목을 입력받아 서버에 등록한다.
 class WardRegisterPage extends StatefulWidget {
@@ -60,11 +60,8 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('피보호자 등록이 완료되었습니다.')),
       );
-      // 홈으로 (뒤로가기로 등록 화면 못 돌아오게 pushReplacement)
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainShell()),
-      );
+      // 홈으로 (뒤로가기로 등록 화면 못 돌아오게 context.go)
+      context.go('/home');
     } catch (e) {
       debugPrint('피보호자 등록 실패: $e'); // 상세 에러는 개발자 로그에만
       if (!mounted) return;

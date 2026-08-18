@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'core/app_globals.dart';
-import 'screens/splash_page.dart';
-import 'screens/login_page.dart';
+import 'core/app_router.dart';
 
 // 앱의 시작점. 여기서 앱 전체를 실행한다.
 void main() {
@@ -14,15 +12,13 @@ class CherrishbombApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey, // 전역 리모컨 (401·로그아웃 시 화면 이동에 사용)
+    return MaterialApp.router(
       title: '낙상감지 핫 라인 시스템',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const SplashPage(), // 시작 화면 (토큰 확인 후 홈/로그인 분기)
-      // 이름있는 경로 — 화면 밖(통신 코드)에서도 이동할 수 있게
-      routes: {'/login': (_) => const LoginPage()},
+      // 라우팅은 전부 appRouter(go_router)가 담당
+      routerConfig: appRouter,
     );
   }
 }
