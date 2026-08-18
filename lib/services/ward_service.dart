@@ -2,6 +2,7 @@ import 'api_client.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
 import '../models/ward_contact.dart';
+import '../models/log_entry.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
 class WardService {
@@ -75,5 +76,32 @@ class WardService {
   /// 비상 연락처 삭제. DELETE /api/wards/me/contacts/{id}
   static Future<void> deleteContact(int contactId) async {
     await ApiClient.dio.delete('/api/wards/me/contacts/$contactId');
+  }
+
+  /// 활동·낙상 이력 조회. GET /api/wards/me/logs
+  /// page/size는 페이지네이션, from/to는 날짜 필터(선택).
+  static Future<LogPage> getLogs({
+    int page = 0,
+    int size = 20,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    // 값이 있는 쿼리만 골라 담는다. (null이면 서버에 안 보냄)
+    final query = <String, dynamic>{'page': page, 'size': size};
+    if (from != null) query['from'] = _ymd(from);
+    if (to != null) query['to'] = _ymd(to);
+
+    final res = await ApiClient.dio.get(
+      '/api/wards/me/logs',
+      queryParameters: query,
+    );
+    return LogPage.fromJson(res.data);
+  }
+
+  /// DateTime → 'YYYY-MM-DD' (서버가 받는 날짜 형식)
+  static String _ymd(DateTime d) {
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
   }
 }
