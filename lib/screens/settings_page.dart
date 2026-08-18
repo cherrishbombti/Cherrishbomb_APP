@@ -1,14 +1,35 @@
 import 'package:flutter/material.dart';
+import '../widgets/logout_button.dart';
+import 'contacts_page.dart';
 
-/// 설정 화면 (임시 stub — 비상 연락망 등은 별도 이슈에서 구현).
+/// 설정 화면. 비상 연락망 등 설정 항목으로 이동.
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('설정')),
-      body: const Center(child: Text('설정 (준비중)')),
+      appBar: AppBar(
+        title: const Text('설정'),
+        actions: const [LogoutButton()],
+      ),
+      body: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.contact_phone),
+            title: const Text('비상 연락망'),
+            subtitle: const Text('연락처 조회 · 추가'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ContactsPage()),
+              );
+            },
+          ),
+          const Divider(height: 1),
+        ],
+      ),
     );
   }
 }

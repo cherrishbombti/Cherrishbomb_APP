@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+import '../services/ward_service.dart';
+import '../utils/input_formatters.dart';
+
+/// 연락처 추가 폼 (바텀시트). 추가 성공 시 Navigator.pop(context, true) 반환.
+class AddContactSheet extends StatefulWidget {
+  const AddContactSheet({super.key});
+
+  @override
+  State<AddContactSheet> createState() => _AddContactSheetState();
+}
+
+class _AddContactSheetState extends State<AddContactSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
+  String? _relationship;
+  static const _relationshipOptions = [
+    '자녀', '부모', '배우자', '형제자매', '친척', '담당 복지사', '기타',
+  ];
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+    try {
+      await WardService.addContact(
+        name: _name.text.trim(),
+        phone: _phone.text.trim(),
+        relationship: _relationship ?? '',
+      );
+      if (!mounted) return;
+      Navigator.pop(context, true); // 성공 → true 반환 (호출한 쪽이 목록 새로고침)
+    } catch (e) {
+      debugPrint('연락처 추가 실패: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('연락처 추가에 실패했습니다. 다시 시도해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      // 키보드가 올라와도 폼이 가려지지 않게 하단 여백 확보
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              '연락처 추가',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _name,
+              decoration: const InputDecoration(
+                labelText: '이름',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? '이름을 입력해주세요' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _phone,
+              keyboardType: TextInputType.number,
+              inputFormatters: [DashFormatter([3, 4, 4])],
+              decoration: const InputDecoration(
+                labelText: '전화번호 (010-XXXX-XXXX)',
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) {
+                final s = (v ?? '').trim();
+                if (s.isEmpty) return '전화번호를 입력해주세요';
+                if (!RegExp(r'^010-\d{4}-\d{4}$').hasMatch(s)) {
+                  return '전화번호 형식이 올바르지 않습니다.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _relationship,
+              decoration: const InputDecoration(
+                labelText: '관계',
+                border: OutlineInputBorder(),
+              ),
+              items: _relationshipOptions
+                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                  .toList(),
+              onChanged: (v) => setState(() => _relationship = v),
+              validator: (v) => v == null ? '관계를 선택해주세요' : null,
+            ),
+            const SizedBox(height: 20),
+            _loading
+                ? const Center(child: CircularProgressIndicator())
+                : FilledButton(
+                    onPressed: _submit,
+                    child: const Text('추가하기'),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
