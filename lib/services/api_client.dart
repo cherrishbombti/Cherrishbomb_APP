@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import 'token_storage.dart';
-import '../core/app_globals.dart'; // navigatorKey
+import '../core/app_router.dart'; // appRouter
 
 /// 앱 전체가 공유하는 서버 통신 창구. (웹 axiosInstance.ts 대응)
 class ApiClient {
@@ -43,11 +43,8 @@ class ApiClient {
           if (error.response?.statusCode == 401 && !_redirecting) {
             _redirecting = true;
             await TokenStorage.deleteToken();
-            // named route '/login'으로 이동 (화면 클래스를 직접 import 안 함 → 결합도↓)
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              '/login',
-              (route) => false, // 이전 화면 스택을 모두 비움
-            );
+            // 세션 만료 → 로그인 화면으로 (go_router 전역 인스턴스 사용)
+            appRouter.go('/login');
           }
           handler.next(error); // 에러를 다음 단계로 넘김
         },

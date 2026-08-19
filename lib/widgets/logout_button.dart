@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 
 /// 여러 화면에서 재사용하는 로그아웃 버튼.
@@ -14,8 +15,8 @@ class LogoutButton extends StatelessWidget {
       onPressed: () async {
         await AuthService.logout();
         if (!context.mounted) return;
-        // 이전 화면 스택을 모두 비우고 로그인 화면으로
-        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+        // 로그인 화면으로 (스택 갈아끼움)
+        context.go('/login');
       },
     );
   }
