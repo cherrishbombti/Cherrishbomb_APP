@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/log_entry.dart';
 import '../services/ward_service.dart';
+import '../widgets/log_filter_bar.dart';
 import '../widgets/log_tile.dart';
 
 /// 활동·낙상 이력 화면. 날짜 필터 + 로그 목록 + 페이지네이션.
@@ -66,6 +67,23 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
 
   // 조회 버튼: 필터를 적용하고 첫 페이지부터 다시 조회
   void _search() {
+    // 시작일이 종료일보다 늦으면 조회를 막고 안내 (서버 INVALID_DATE_RANGE 방지)
+    if (_from != null && _to != null && _from!.isAfter(_to!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('시작일이 종료일보다 늦을 수 없습니다.')),
+      );
+      return;
+    }
+    _pageNum = 0;
+    _load();
+  }
+
+  // 날짜 필터 초기화 → 전체 조회
+  void _resetFilter() {
+    setState(() {
+      _from = null;
+      _to = null;
+    });
     _pageNum = 0;
     _load();
   }
@@ -78,40 +96,29 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('활동 로그')),
+      appBar: AppBar(
+        title: const Text('활동 로그'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_alt_off),
+            tooltip: '필터 초기화',
+            onPressed: _resetFilter,
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          _filterBar(),
+          LogFilterBar(
+            from: _from,
+            to: _to,
+            onPickFrom: () => _pickDate(isFrom: true),
+            onPickTo: () => _pickDate(isFrom: false),
+            onSearch: _search,
+          ),
           const Divider(height: 1),
           Expanded(child: _buildBody()),
         ],
       ),
-    );
-  }
-
-  // 상단 날짜 필터 바 (시작일 ~ 종료일 + 조회)
-  Widget _filterBar() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Expanded(child: _dateField('시작일', _from, () => _pickDate(isFrom: true))),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('~'),
-          ),
-          Expanded(child: _dateField('종료일', _to, () => _pickDate(isFrom: false))),
-          const SizedBox(width: 8),
-          FilledButton(onPressed: _search, child: const Text('조회')),
-        ],
-      ),
-    );
-  }
-
-  Widget _dateField(String label, DateTime? value, VoidCallback onTap) {
-    return OutlinedButton(
-      onPressed: onTap,
-      child: Text(value == null ? label : _ymd(value)),
     );
   }
 
@@ -171,9 +178,4 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       ),
     );
   }
-
-  // ---- 날짜 포맷 헬퍼 (intl 패키지 없이 직접) ----
-  String _ymd(DateTime d) => '${d.year}-${_pad2(d.month)}-${_pad2(d.day)}';
-
-  String _pad2(int n) => n.toString().padLeft(2, '0');
 }

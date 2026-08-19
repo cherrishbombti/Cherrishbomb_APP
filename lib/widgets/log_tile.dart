@@ -29,22 +29,22 @@ class LogTile extends StatelessWidget {
   // logType → (색상, 표시 라벨). status로 심각도 색을 구분.
   (Color, String) _badge(LogEntry log) {
     switch (log.logType) {
-      case 'FALL_EVENT':
+      case LogTypes.fallEvent:
         return (_statusColor(log.status), '낙상 감지');
-      case 'SENSOR_FAILURE':
+      case LogTypes.sensorFailure:
         return (Colors.orange, '센서 장애');
-      case 'EMERGENCY_CALL':
+      case LogTypes.emergencyCall:
         return (Colors.red, '119 연결');
       default:
-        return (Colors.grey, log.logType);
+        return (Colors.grey, '알 수 없는 이벤트');
     }
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'DANGER':
+      case MemberStatuses.danger:
         return Colors.red;
-      case 'WARNING':
+      case MemberStatuses.warning:
         return Colors.orange;
       default:
         return Colors.green;

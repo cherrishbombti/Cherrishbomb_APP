@@ -1,3 +1,17 @@
+/// 서버 logType 값 상수 (하드코딩 방지).
+class LogTypes {
+  static const fallEvent = 'FALL_EVENT';
+  static const sensorFailure = 'SENSOR_FAILURE';
+  static const emergencyCall = 'EMERGENCY_CALL';
+}
+
+/// 서버 status(피보호자 상태) 값 상수.
+class MemberStatuses {
+  static const safe = 'SAFE';
+  static const warning = 'WARNING';
+  static const danger = 'DANGER';
+}
+
 /// 활동·낙상 이력 로그 한 건. GET /api/wards/me/logs 응답의 content 항목.
 class LogEntry {
   final int id;
