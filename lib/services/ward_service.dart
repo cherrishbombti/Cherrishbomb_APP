@@ -3,6 +3,7 @@ import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
 import '../models/ward_contact.dart';
 import '../models/log_entry.dart';
+import '../utils/date_format.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
 class WardService {
@@ -88,20 +89,13 @@ class WardService {
   }) async {
     // 값이 있는 쿼리만 골라 담는다. (null이면 서버에 안 보냄)
     final query = <String, dynamic>{'page': page, 'size': size};
-    if (from != null) query['from'] = _ymd(from);
-    if (to != null) query['to'] = _ymd(to);
+    if (from != null) query['from'] = ymd(from);
+    if (to != null) query['to'] = ymd(to);
 
     final res = await ApiClient.dio.get(
       '/api/wards/me/logs',
       queryParameters: query,
     );
     return LogPage.fromJson(res.data);
-  }
-
-  /// DateTime → 'YYYY-MM-DD' (서버가 받는 날짜 형식)
-  static String _ymd(DateTime d) {
-    final m = d.month.toString().padLeft(2, '0');
-    final day = d.day.toString().padLeft(2, '0');
-    return '${d.year}-$m-$day';
   }
 }

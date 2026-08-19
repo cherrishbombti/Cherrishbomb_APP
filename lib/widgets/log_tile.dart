@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/log_entry.dart';
+import '../utils/date_format.dart';
 
 /// 활동 로그 한 건을 카드로 표시.
 /// 색상·라벨은 백엔드 logType + status 기준. (와이어프레임 아님)
@@ -20,7 +21,7 @@ class LogTile extends StatelessWidget {
           if (hasSensor) '센서: ${log.sensorDetail}',
         ].join('\n')),
         trailing:
-            Text(log.status, style: TextStyle(color: color, fontSize: 12)),
+            Text(_statusLabel(log.status), style: TextStyle(color: color, fontSize: 12)),
         isThreeLine: hasSensor,
       ),
     );
@@ -51,9 +52,19 @@ class LogTile extends StatelessWidget {
     }
   }
 
-  String _dateTime(DateTime? d) => d == null
-      ? '-'
-      : '${_pad2(d.month)}-${_pad2(d.day)} ${_pad2(d.hour)}:${_pad2(d.minute)}';
+  // status 한글 라벨 (영문 enum 노출 방지)
+  String _statusLabel(String status) {
+    switch (status) {
+      case MemberStatuses.danger:
+        return '위험';
+      case MemberStatuses.warning:
+        return '경고';
+      case MemberStatuses.safe:
+        return '안전';
+      default:
+        return status;
+    }
+  }
 
-  String _pad2(int n) => n.toString().padLeft(2, '0');
+  String _dateTime(DateTime? d) => d == null ? '-' : mdHm(d);
 }

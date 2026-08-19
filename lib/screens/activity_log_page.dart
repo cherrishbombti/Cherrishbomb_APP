@@ -20,6 +20,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
   int _pageNum = 0; // 현재 조회 중인 페이지 (0부터)
   DateTime? _from; // 시작일 필터 (선택)
   DateTime? _to; // 종료일 필터 (선택)
+  final _scroll = ScrollController(); // 페이지 전환 시 상단으로 이동용
 
   @override
   void initState() {
@@ -27,7 +28,22 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  // 목록 조회 공통 경로. 조회/새로고침/페이지이동/초기화 모두 이곳을 탄다.
+  // 날짜 가드도 여기서 처리해 어떤 경로로 와도 우회되지 않는다. (리뷰 반영)
   Future<void> _load() async {
+    // 시작일 > 종료일이면 조회하지 않고 안내 (서버 INVALID_DATE_RANGE 방지)
+    if (_from != null && _to != null && _from!.isAfter(_to!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('시작일이 종료일보다 늦을 수 없습니다.')),
+      );
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -43,6 +59,8 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
         _data = data;
         _loading = false;
       });
+      // 페이지가 바뀌어도 스크롤이 그대로면 전환을 인지하기 어려워 맨 위로 이동
+      if (_scroll.hasClients) _scroll.jumpTo(0);
     } catch (e) {
       debugPrint('활동 이력 로드 실패: $e');
       if (!mounted) return;
@@ -65,15 +83,8 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
     setState(() => isFrom ? _from = picked : _to = picked);
   }
 
-  // 조회 버튼: 필터를 적용하고 첫 페이지부터 다시 조회
+  // 조회 버튼: 첫 페이지부터 다시 조회 (가드는 _load에서 처리)
   void _search() {
-    // 시작일이 종료일보다 늦으면 조회를 막고 안내 (서버 INVALID_DATE_RANGE 방지)
-    if (_from != null && _to != null && _from!.isAfter(_to!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('시작일이 종료일보다 늦을 수 없습니다.')),
-      );
-      return;
-    }
     _pageNum = 0;
     _load();
   }
@@ -140,14 +151,19 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
     }
     final logs = _data?.content ?? [];
     if (logs.isEmpty) {
-      return const Center(
-        child: Text('해당 기간의 활동 이력이 없습니다.',
-            style: TextStyle(color: Colors.grey)),
+      // 필터 유무에 따라 메시지 구분 (필터 안 걸었는데 "해당 기간" 표현은 혼란)
+      final hasFilter = _from != null || _to != null;
+      return Center(
+        child: Text(
+          hasFilter ? '해당 기간의 활동 이력이 없습니다.' : '아직 활동 이력이 없습니다.',
+          style: const TextStyle(color: Colors.grey),
+        ),
       );
     }
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
+        controller: _scroll,
         padding: const EdgeInsets.all(16),
         itemCount: logs.length + 1, // 마지막 칸은 페이지네이션
         itemBuilder: (_, i) =>

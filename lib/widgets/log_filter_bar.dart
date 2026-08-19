@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/date_format.dart';
 
 /// 활동 로그 상단 날짜 필터 바 (시작일 ~ 종료일 + 조회).
 class LogFilterBar extends StatelessWidget {
@@ -39,10 +40,7 @@ class LogFilterBar extends StatelessWidget {
   Widget _dateField(String label, DateTime? value, VoidCallback onTap) {
     return OutlinedButton(
       onPressed: onTap,
-      child: Text(value == null ? label : _ymd(value)),
+      child: Text(value == null ? label : ymd(value)),
     );
   }
-
-  String _ymd(DateTime d) => '${d.year}-${_pad2(d.month)}-${_pad2(d.day)}';
-  String _pad2(int n) => n.toString().padLeft(2, '0');
 }
