@@ -46,14 +46,51 @@ class _ContactsPageState extends State<ContactsPage> {
     }
   }
 
-  // 추가 바텀시트를 열고, 추가되면 목록 새로고침
-  Future<void> _openAddSheet() async {
-    final added = await showModalBottomSheet<bool>(
+  // 추가/수정 바텀시트를 열고, 저장되면 목록 새로고침.
+  // existing이 있으면 수정, 없으면 추가.
+  Future<void> _openSheet({WardContact? existing}) async {
+    final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true, // 키보드에 맞춰 올라오게
-      builder: (_) => const AddContactSheet(),
+      builder: (_) => AddContactSheet(existing: existing),
     );
-    if (added == true) _load();
+    if (saved == true) _load();
+  }
+
+  // 삭제 확인 다이얼로그 → 확인 시 삭제
+  Future<void> _confirmDelete(WardContact c) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('연락처 삭제'),
+        content: Text('${c.name} 연락처를 삭제할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) _deleteContact(c);
+  }
+
+  Future<void> _deleteContact(WardContact c) async {
+    try {
+      await WardService.deleteContact(c.contactId);
+      if (!mounted) return;
+      _load();
+    } catch (e) {
+      debugPrint('연락처 삭제 실패: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('삭제에 실패했습니다.')),
+      );
+    }
   }
 
   Future<void> _callPhone(String phone) async {
@@ -72,7 +109,7 @@ class _ContactsPageState extends State<ContactsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('비상 연락망')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddSheet,
+        onPressed: () => _openSheet(),
         icon: const Icon(Icons.add),
         label: const Text('연락처 추가'),
       ),
@@ -110,30 +147,39 @@ class _ContactsPageState extends State<ContactsPage> {
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _contacts.length,
-        itemBuilder: (_, i) => _contactCard(_contacts[i], i),
+        itemBuilder: (_, i) => _contactCard(_contacts[i]),
       ),
     );
   }
 
-  Widget _contactCard(WardContact c, int index) {
+  Widget _contactCard(WardContact c) {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           child: Text(c.name.isNotEmpty ? c.name[0] : '?'),
         ),
         title: Text('${c.name} (${c.relationship})'),
-        subtitle: Text(c.phone),
+        // 우선순위는 서버가 준 값(c.priority)을 표시 (C6: 배열 인덱스 아님)
+        subtitle: Text('${c.phone}\n우선순위 ${c.priority}'),
+        isThreeLine: true,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '우선순위 ${index + 1}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
             IconButton(
               icon: const Icon(Icons.call, color: Colors.green),
               tooltip: '전화 걸기',
               onPressed: () => _callPhone(c.phone),
+            ),
+            // 수정 / 삭제 메뉴
+            PopupMenuButton<String>(
+              onSelected: (v) {
+                if (v == 'edit') _openSheet(existing: c);
+                if (v == 'delete') _confirmDelete(c);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('수정')),
+                PopupMenuItem(value: 'delete', child: Text('삭제')),
+              ],
             ),
           ],
         ),

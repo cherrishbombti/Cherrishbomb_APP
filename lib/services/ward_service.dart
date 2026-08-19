@@ -58,4 +58,22 @@ class WardService {
       data: {'name': name, 'phone': phone, 'relationship': relationship},
     );
   }
+
+  /// 비상 연락처 수정. PUT /api/wards/me/contacts/{id}
+  static Future<void> updateContact({
+    required int contactId,
+    required String name,
+    required String phone,
+    required String relationship,
+  }) async {
+    await ApiClient.dio.put(
+      '/api/wards/me/contacts/$contactId',
+      data: {'name': name, 'phone': phone, 'relationship': relationship},
+    );
+  }
+
+  /// 비상 연락처 삭제. DELETE /api/wards/me/contacts/{id}
+  static Future<void> deleteContact(int contactId) async {
+    await ApiClient.dio.delete('/api/wards/me/contacts/$contactId');
+  }
 }

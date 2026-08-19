@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import '../models/ward_contact.dart';
 import '../services/ward_service.dart';
 import '../utils/input_formatters.dart';
 
-/// 연락처 추가 폼 (바텀시트). 추가 성공 시 Navigator.pop(context, true) 반환.
+/// 연락처 추가/수정 폼 (바텀시트).
+/// [existing]이 있으면 수정 모드(값 미리 채움), 없으면 추가 모드.
+/// 성공 시 Navigator.pop(context, true) 반환 → 호출한 쪽이 목록 새로고침.
 class AddContactSheet extends StatefulWidget {
-  const AddContactSheet({super.key});
+  final WardContact? existing;
+  const AddContactSheet({super.key, this.existing});
 
   @override
   State<AddContactSheet> createState() => _AddContactSheetState();
@@ -20,6 +24,20 @@ class _AddContactSheetState extends State<AddContactSheet> {
   ];
   bool _loading = false;
 
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // 수정 모드면 기존 값으로 채운다
+    final c = widget.existing;
+    if (c != null) {
+      _name.text = c.name;
+      _phone.text = c.phone;
+      _relationship = c.relationship;
+    }
+  }
+
   @override
   void dispose() {
     _name.dispose();
@@ -31,18 +49,27 @@ class _AddContactSheetState extends State<AddContactSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await WardService.addContact(
-        name: _name.text.trim(),
-        phone: _phone.text.trim(),
-        relationship: _relationship ?? '',
-      );
+      if (_isEdit) {
+        await WardService.updateContact(
+          contactId: widget.existing!.contactId,
+          name: _name.text.trim(),
+          phone: _phone.text.trim(),
+          relationship: _relationship ?? '',
+        );
+      } else {
+        await WardService.addContact(
+          name: _name.text.trim(),
+          phone: _phone.text.trim(),
+          relationship: _relationship ?? '',
+        );
+      }
       if (!mounted) return;
-      Navigator.pop(context, true); // 성공 → true 반환 (호출한 쪽이 목록 새로고침)
+      Navigator.pop(context, true); // 성공 → true 반환
     } catch (e) {
-      debugPrint('연락처 추가 실패: $e');
+      debugPrint('연락처 저장 실패: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('연락처 추가에 실패했습니다. 다시 시도해주세요.')),
+        const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -65,9 +92,9 @@ class _AddContactSheetState extends State<AddContactSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              '연락처 추가',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              _isEdit ? '연락처 수정' : '연락처 추가',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -115,7 +142,7 @@ class _AddContactSheetState extends State<AddContactSheet> {
                 ? const Center(child: CircularProgressIndicator())
                 : FilledButton(
                     onPressed: _submit,
-                    child: const Text('추가하기'),
+                    child: Text(_isEdit ? '수정하기' : '추가하기'),
                   ),
           ],
         ),

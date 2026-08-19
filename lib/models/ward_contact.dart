@@ -16,7 +16,9 @@ class WardContact {
 
   factory WardContact.fromJson(Map<String, dynamic> json) {
     return WardContact(
-      contactId: json['contactId'] ?? 0,
+      // 서버가 반드시 주는 값. 0으로 덮으면 삭제/수정 API에 0이 나갈 위험이 있어
+      // 없으면 예외로 드러나게 한다. (C12)
+      contactId: json['contactId'] as int,
       name: json['name'] ?? '',
       phone: json['phone'] ?? '',
       relationship: json['relationship'] ?? '',
