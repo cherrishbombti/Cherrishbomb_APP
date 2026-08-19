@@ -1,6 +1,7 @@
 import 'api_client.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
+import '../models/ward_contact.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
 class WardService {
@@ -36,5 +37,43 @@ class WardService {
         'deviceMac': deviceMac,
       },
     );
+  }
+
+  /// 비상 연락처 목록 조회. GET /api/wards/me/contacts
+  static Future<List<WardContact>> getContacts() async {
+    final res = await ApiClient.dio.get('/api/wards/me/contacts');
+    // 응답은 리스트(JSON 배열) → 각 항목을 WardContact로 변환
+    final list = res.data as List;
+    return list.map((e) => WardContact.fromJson(e)).toList();
+  }
+
+  /// 비상 연락처 추가. POST /api/wards/me/contacts
+  static Future<void> addContact({
+    required String name,
+    required String phone,
+    required String relationship,
+  }) async {
+    await ApiClient.dio.post(
+      '/api/wards/me/contacts',
+      data: {'name': name, 'phone': phone, 'relationship': relationship},
+    );
+  }
+
+  /// 비상 연락처 수정. PUT /api/wards/me/contacts/{id}
+  static Future<void> updateContact({
+    required int contactId,
+    required String name,
+    required String phone,
+    required String relationship,
+  }) async {
+    await ApiClient.dio.put(
+      '/api/wards/me/contacts/$contactId',
+      data: {'name': name, 'phone': phone, 'relationship': relationship},
+    );
+  }
+
+  /// 비상 연락처 삭제. DELETE /api/wards/me/contacts/{id}
+  static Future<void> deleteContact(int contactId) async {
+    await ApiClient.dio.delete('/api/wards/me/contacts/$contactId');
   }
 }

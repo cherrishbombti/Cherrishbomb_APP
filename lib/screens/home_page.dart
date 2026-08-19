@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // 전화 걸기
+import '../utils/phone_format.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
 import '../services/ward_service.dart';
@@ -296,9 +297,9 @@ class _HomePageState extends State<HomePage> {
 
   // 전화 걸기 — 전화 앱을 연다.
   Future<void> _callPhone(String phone) async {
-    final uri = Uri(scheme: 'tel', path: phone);
+    final uri = Uri(scheme: 'tel', path: phoneDigits(phone));
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

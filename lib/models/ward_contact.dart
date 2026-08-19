@@ -1,0 +1,28 @@
+/// 비상 연락처 하나. GET /api/wards/me/contacts 응답의 각 항목.
+class WardContact {
+  final int contactId;
+  final String name; // 연락처 이름
+  final String phone; // 전화번호
+  final String relationship; // 관계
+  final int priority; // 우선순위 (현재 백엔드는 등록순, 추후 정렬 지원 예정)
+
+  WardContact({
+    required this.contactId,
+    required this.name,
+    required this.phone,
+    required this.relationship,
+    required this.priority,
+  });
+
+  factory WardContact.fromJson(Map<String, dynamic> json) {
+    return WardContact(
+      // 서버가 반드시 주는 값. 0으로 덮으면 삭제/수정 API에 0이 나갈 위험이 있어
+      // 없으면 예외로 드러나게 한다. (C12)
+      contactId: json['contactId'] as int,
+      name: json['name'] ?? '',
+      phone: json['phone'] ?? '',
+      relationship: json['relationship'] ?? '',
+      priority: json['priority'] ?? 0,
+    );
+  }
+}
