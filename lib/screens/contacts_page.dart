@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/ward_contact.dart';
 import '../services/ward_service.dart';
+import '../utils/phone_format.dart';
 import '../widgets/add_contact_sheet.dart';
 
 /// 비상 연락망 화면. 연락처 목록 조회 + 추가.
@@ -94,9 +95,10 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   Future<void> _callPhone(String phone) async {
-    final uri = Uri(scheme: 'tel', path: phone);
+    // 전화는 숫자만으로 (저장값이 숫자라 그대로도 되지만 방어적으로 정리)
+    final uri = Uri(scheme: 'tel', path: phoneDigits(phone));
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('전화를 걸 수 없습니다.')),
@@ -159,8 +161,8 @@ class _ContactsPageState extends State<ContactsPage> {
           child: Text(c.name.isNotEmpty ? c.name[0] : '?'),
         ),
         title: Text('${c.name} (${c.relationship})'),
-        // 우선순위는 서버가 준 값(c.priority)을 표시 (C6: 배열 인덱스 아님)
-        subtitle: Text('${c.phone}\n우선순위 ${c.priority}'),
+        // 전화번호는 표시할 때만 하이픈, 우선순위는 서버값(C6)
+        subtitle: Text('${formatPhone(c.phone)}\n우선순위 ${c.priority}'),
         isThreeLine: true,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

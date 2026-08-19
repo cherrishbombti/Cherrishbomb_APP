@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ward_contact.dart';
 import '../services/ward_service.dart';
 import '../utils/input_formatters.dart';
+import '../utils/phone_format.dart';
 
 /// 연락처 추가/수정 폼 (바텀시트).
 /// [existing]이 있으면 수정 모드(값 미리 채움), 없으면 추가 모드.
@@ -33,7 +34,7 @@ class _AddContactSheetState extends State<AddContactSheet> {
     final c = widget.existing;
     if (c != null) {
       _name.text = c.name;
-      _phone.text = c.phone;
+      _phone.text = formatPhone(c.phone); // 저장은 숫자 → 표시는 하이픈
       _relationship = c.relationship;
     }
   }
@@ -49,17 +50,19 @@ class _AddContactSheetState extends State<AddContactSheet> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      // 서버에는 숫자만 전송 (하이픈 제거)
+      final phone = phoneDigits(_phone.text);
       if (_isEdit) {
         await WardService.updateContact(
           contactId: widget.existing!.contactId,
           name: _name.text.trim(),
-          phone: _phone.text.trim(),
+          phone: phone,
           relationship: _relationship ?? '',
         );
       } else {
         await WardService.addContact(
           name: _name.text.trim(),
-          phone: _phone.text.trim(),
+          phone: phone,
           relationship: _relationship ?? '',
         );
       }
