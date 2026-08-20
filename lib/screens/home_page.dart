@@ -32,7 +32,8 @@ class _HomePageState extends State<HomePage> {
   // 미읽음 알림 개수만 별도로. 실패해도 홈 화면엔 영향 없게 무시.
   Future<void> _loadUnread() async {
     try {
-      final n = await WardService.getNotifications();
+      // 배지는 unreadCount만 필요 → 목록 페이로드 최소화(size:1)
+      final n = await WardService.getNotifications(size: 1);
       if (mounted) setState(() => _unread = n.unreadCount);
     } catch (_) {
       // 배지는 부가 정보라 실패 시 조용히 무시

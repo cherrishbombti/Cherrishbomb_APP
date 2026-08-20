@@ -178,9 +178,5 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  String _time(String? raw) {
-    if (raw == null) return '-';
-    final d = DateTime.tryParse(raw);
-    return d == null ? raw : mdHm(d);
-  }
+  String _time(DateTime? d) => d == null ? '-' : mdHm(d);
 }

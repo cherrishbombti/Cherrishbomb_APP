@@ -10,14 +10,16 @@ class NotiTypes {
 class AppNotification {
   final int id;
   final String notificationType; // FALL / WARNING / DEVICE_OFFLINE / EMERGENCY
+  final int? memberId; // 알림 클릭 시 상세 이동용 식별자
   final String memberName; // 누구에 관한 알림인지
   final int? logId; // 연결된 이력 (없으면 null)
   final bool isRead;
-  final String? createdAt; // ISO 문자열
+  final DateTime? createdAt; // 시각은 DateTime으로 통일 (LogEntry와 일관)
 
   AppNotification({
     required this.id,
     required this.notificationType,
+    required this.memberId,
     required this.memberName,
     required this.logId,
     required this.isRead,
@@ -25,13 +27,15 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    final raw = json['createdAt'];
     return AppNotification(
       id: json['id'] as int,
       notificationType: json['notificationType'] ?? '',
+      memberId: json['memberId'],
       memberName: json['memberName'] ?? '',
       logId: json['logId'],
       isRead: json['isRead'] ?? false,
-      createdAt: json['createdAt'],
+      createdAt: raw != null ? DateTime.tryParse(raw.toString()) : null,
     );
   }
 }
