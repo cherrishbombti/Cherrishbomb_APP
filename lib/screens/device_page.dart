@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/ward_sensor.dart';
 import '../services/ward_service.dart';
 import '../utils/date_format.dart';
+import '../widgets/device_widgets.dart';
 
-/// 기기 관리 화면. 낙상 감지 센서(라즈베리파이) 연결·센서 상태를 표시.
-/// 표시 항목은 백엔드 getSensors 응답 기준.
-/// (배터리·신호·연결이력은 백엔드 미제공이라 이번 범위 제외)
+/// 기기 관리 화면 (와이어프레임 07).
+/// 온라인 상태·마지막 신호는 백엔드 getSensors 실데이터.
+/// 배터리·신호·설치위치·연결이력은 백엔드 미제공 → 임시 표시(연동 예정).
 class DevicePage extends StatefulWidget {
   const DevicePage({super.key});
 
@@ -76,62 +77,28 @@ class _DevicePageState extends State<DevicePage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _onlineCard(s),
+          const Center(
+            child: Text('라즈베리파이 낙상 감지 센서',
+                style: TextStyle(color: Colors.grey)),
+          ),
           const SizedBox(height: 12),
-          _sensorCard(s),
-        ],
-      ),
-    );
-  }
-
-  // 온라인/오프라인 + 마지막 신호 시각
-  Widget _onlineCard(WardSensor s) {
-    final online = s.deviceOnline;
-    return Card(
-      child: ListTile(
-        leading: Icon(Icons.circle,
-            size: 14, color: online ? Colors.green : Colors.grey),
-        title: Text(online ? '온라인' : '오프라인',
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('마지막 신호: ${_lastSeen(s.deviceLastSeen)}'),
-      ),
-    );
-  }
-
-  // 센서 3종 상태
-  Widget _sensorCard(WardSensor s) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('센서 상태',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _sensorRow('진동 센서', s.vibrator),
-            _sensorRow('레이더 센서', s.radar),
-            _sensorRow('열화상 센서', s.thermal),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sensorRow(String name, bool? ok) {
-    // null=미확인 / true=정상 / false=이상
-    final (color, label) = ok == null
-        ? (Colors.grey, '미확인')
-        : ok
-            ? (Colors.green, '정상')
-            : (Colors.red, '이상');
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(name),
-          Text(label, style: TextStyle(color: color)),
+          DeviceOnlineCard(
+            online: s.deviceOnline,
+            lastSeen: _lastSeen(s.deviceLastSeen),
+          ),
+          const SizedBox(height: 12),
+          // 배터리·신호는 백엔드 미제공 → 임시 표시
+          const Row(
+            children: [
+              Expanded(child: DeviceStatBox(value: '—', label: '배터리')),
+              SizedBox(width: 12),
+              Expanded(child: DeviceStatBox(value: '—', label: '신호')),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const DeviceInstallCard(location: '미설정'),
+          const SizedBox(height: 12),
+          const DeviceHistoryCard(),
         ],
       ),
     );

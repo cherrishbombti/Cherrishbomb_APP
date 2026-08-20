@@ -15,10 +15,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _loading = true;
   String? _error;
   NotiPage? _data;
+  int _pageNum = 0; // 현재 페이지 (0부터)
 
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  void _goPage(int p) {
+    _pageNum = p;
     _load();
   }
 
@@ -28,7 +34,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       _error = null;
     });
     try {
-      final data = await WardService.getNotifications();
+      final data = await WardService.getNotifications(page: _pageNum);
       if (!mounted) return;
       setState(() {
         _data = data;
@@ -104,8 +110,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
       onRefresh: _load,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: items.length,
-        itemBuilder: (_, i) => _card(items[i]),
+        itemCount: items.length + 1, // 마지막 칸은 페이지네이션
+        itemBuilder: (_, i) =>
+            i < items.length ? _card(items[i]) : _pagination(),
+      ),
+    );
+  }
+
+  // 하단 페이지 이동 (이전 / 현재·전체 / 다음)
+  Widget _pagination() {
+    final d = _data;
+    if (d == null || d.totalPages <= 1) return const SizedBox(height: 24);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: d.page > 0 ? () => _goPage(d.page - 1) : null,
+          ),
+          Text('${d.page + 1} / ${d.totalPages}'),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: !d.last ? () => _goPage(d.page + 1) : null,
+          ),
+        ],
       ),
     );
   }

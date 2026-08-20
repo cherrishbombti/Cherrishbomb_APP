@@ -20,11 +20,23 @@ class _HomePageState extends State<HomePage> {
   String? _error; // 에러 메시지 (없으면 null)
   WardSummary? _summary;
   WardSensor? _sensor;
+  int _unread = 0; // 미읽음 알림 개수 (벨 배지)
 
   @override
   void initState() {
     super.initState();
     _load(); // 화면 뜨자마자 데이터 불러오기
+    _loadUnread(); // 알림 배지 (홈 로딩과 독립)
+  }
+
+  // 미읽음 알림 개수만 별도로. 실패해도 홈 화면엔 영향 없게 무시.
+  Future<void> _loadUnread() async {
+    try {
+      final n = await WardService.getNotifications();
+      if (mounted) setState(() => _unread = n.unreadCount);
+    } catch (_) {
+      // 배지는 부가 정보라 실패 시 조용히 무시
+    }
   }
 
   // 요약 + 센서 데이터를 서버에서 불러온다. (두 요청은 독립적이라 병렬 호출)
@@ -61,12 +73,16 @@ class _HomePageState extends State<HomePage> {
         title: const Text('보호자 모드'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: Badge(
+              isLabelVisible: _unread > 0,
+              label: Text('$_unread'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
             tooltip: '알림함',
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NotificationsPage()),
-            ),
+            ).then((_) => _loadUnread()), // 알림함 다녀오면 배지 갱신
           ),
           const LogoutButton(),
         ],
