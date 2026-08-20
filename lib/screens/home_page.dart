@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // 전화 걸기
+import 'notifications_page.dart';
 import '../utils/phone_format.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
@@ -58,7 +59,17 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('보호자 모드'),
-        actions: const [LogoutButton()],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: '알림함',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationsPage()),
+            ),
+          ),
+          const LogoutButton(),
+        ],
       ),
       body: _buildBody(),
     );

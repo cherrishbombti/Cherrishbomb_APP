@@ -3,6 +3,8 @@ import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
 import '../models/ward_contact.dart';
 import '../models/log_entry.dart';
+import '../models/ward_health.dart';
+import '../models/app_notification.dart';
 import '../utils/date_format.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
@@ -97,5 +99,47 @@ class WardService {
       queryParameters: query,
     );
     return LogPage.fromJson(res.data);
+  }
+
+  // ---- 건강 정보 (#20) ----
+
+  /// 건강 정보 조회. GET /api/wards/me/health
+  static Future<WardHealth> getHealth() async {
+    final res = await ApiClient.dio.get('/api/wards/me/health');
+    return WardHealth.fromJson(res.data);
+  }
+
+  /// 건강 정보 전체 저장(upsert). PUT /api/wards/me/health
+  /// 세 필드 모두 필수 — 비우려면 빈 문자열을 보낸다.
+  static Future<void> putHealth({
+    required String disease,
+    required String medication,
+    required String memo,
+  }) async {
+    await ApiClient.dio.put(
+      '/api/wards/me/health',
+      data: {'disease': disease, 'medication': medication, 'memo': memo},
+    );
+  }
+
+  // ---- 알림 (#21) ----
+
+  /// 알림 목록 조회. GET /api/wards/me/notifications
+  static Future<NotiPage> getNotifications({int page = 0, int size = 20}) async {
+    final res = await ApiClient.dio.get(
+      '/api/wards/me/notifications',
+      queryParameters: {'page': page, 'size': size},
+    );
+    return NotiPage.fromJson(res.data);
+  }
+
+  /// 단건 읽음 처리. PATCH /api/wards/me/notifications/{id}/read
+  static Future<void> readNotification(int id) async {
+    await ApiClient.dio.patch('/api/wards/me/notifications/$id/read');
+  }
+
+  /// 전체 읽음 처리. PATCH /api/wards/me/notifications/read-all
+  static Future<void> readAllNotifications() async {
+    await ApiClient.dio.patch('/api/wards/me/notifications/read-all');
   }
 }
