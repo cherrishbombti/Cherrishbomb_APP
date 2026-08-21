@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/logout_button.dart';
 import 'contacts_page.dart';
+import 'health_page.dart';
 
 /// 설정 화면. 비상 연락망 등 설정 항목으로 이동.
 class SettingsPage extends StatelessWidget {
@@ -24,6 +25,19 @@ class SettingsPage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ContactsPage()),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.favorite_border),
+            title: const Text('건강 정보 관리'),
+            subtitle: const Text('기저질환 · 복용약 · 병력'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HealthPage()),
               );
             },
           ),
