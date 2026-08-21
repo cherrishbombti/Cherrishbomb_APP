@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // SystemNavigator
 import 'home_page.dart';
 import 'activity_log_page.dart';
 import 'device_page.dart';
 import 'settings_page.dart';
 
 /// 로그인 후 메인 화면. 하단 탭으로 4개 화면을 전환한다.
-/// 탭마다 독립 Navigator를 두어, 탭 안에서 상세 화면(연락망·건강정보·알림함)을
-/// 열어도 하단 탭이 계속 유지되도록 한다. (#23: 하단 탭 지속 + Scaffold 구조 개선)
+/// 홈 / 활동 로그 / 기기 관리 / 설정
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -17,10 +15,13 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0; // 현재 선택된 탭
-  final _navKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
-  final Set<int> _loaded = {0}; // 방문한 탭만 빌드 (lazy)
 
-  Widget _rootFor(int i) {
+  // 실제로 방문한 탭만 빌드한다. (C1: IndexedStack이 4개 화면을
+  // 한 번에 빌드해 모든 initState가 동시에 실행되던 문제 해결)
+  // 시작 탭(홈)만 미리 로드하고, 나머지는 처음 눌렀을 때 로드.
+  final Set<int> _loaded = {0};
+
+  Widget _pageAt(int i) {
     switch (i) {
       case 0:
         return const HomePage();
@@ -33,52 +34,33 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  // 탭 전용 Navigator. 탭 안 push는 이 Navigator를 타서 하단 탭 밖으로 안 나감.
-  Widget _tabNavigator(int i) {
-    return Navigator(
-      key: _navKeys[i],
-      onGenerateRoute: (_) =>
-          MaterialPageRoute(builder: (_) => _rootFor(i)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    // 뒤로가기 처리: 홈 탭(0)에서만 앱 종료 허용.
+    // 다른 탭에서 뒤로가기를 누르면 앱을 끄지 않고 홈 탭으로 돌아간다.
     return PopScope(
-      canPop: false,
+      canPop: _index == 0,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        final nav = _navKeys[_index].currentState;
-        if (nav != null && nav.canPop()) {
-          nav.pop(); // 탭 안 상세 화면 닫기 (하단 탭 유지)
-        } else if (_index != 0) {
-          setState(() => _index = 0); // 그 외 탭 → 홈 탭으로
-        } else {
-          SystemNavigator.pop(); // 홈 탭 + 더 없음 → 앱 종료
-        }
+        if (didPop) return; // 이미 pop됐으면(홈 탭) 그대로 종료
+        setState(() => _index = 0); // 그 외 탭 → 홈 탭으로
       },
       child: Scaffold(
         body: IndexedStack(
           index: _index,
+          // 방문 전 탭은 빈 위젯, 방문 후엔 실제 화면 (한 번 로드되면 유지)
           children: List.generate(
             4,
-            (i) =>
-                _loaded.contains(i) ? _tabNavigator(i) : const SizedBox.shrink(),
+            (i) => _loaded.contains(i)
+                ? _pageAt(i)
+                : const SizedBox.shrink(),
           ),
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
-          onDestinationSelected: (i) {
-            if (i == _index) {
-              // 같은 탭 재선택 → 그 탭의 첫 화면으로
-              _navKeys[i].currentState?.popUntil((r) => r.isFirst);
-            } else {
-              setState(() {
-                _index = i;
-                _loaded.add(i);
-              });
-            }
-          },
+          onDestinationSelected: (i) => setState(() {
+            _index = i;
+            _loaded.add(i); // 처음 방문하는 탭이면 로드 목록에 추가
+          }),
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
