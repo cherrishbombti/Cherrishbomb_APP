@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import '../services/ward_service.dart';
 import '../widgets/logout_button.dart';
@@ -56,7 +57,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
     try {
       await WardService.registerWard(
         name: _wardName.text.trim(),
-        birthDate: '', // 생년월일/나이 미수집 → 빈 값 (백엔드 age 계산 스킵)
+        // 생년월일/나이 미수집 → birthDate 생략 (서버는 없으면 age 계산 스킵)
         address: _address.text.trim(),
         phone: _wardPhone.text.trim(),
         relationship: _relationship.text.trim(),
@@ -66,10 +67,19 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
       if (!mounted) return;
       _snack('회원가입이 완료되었습니다.');
       context.go('/home');
+    } on DioException catch (e) {
+      // 서버가 내려주는 사유({message})를 그대로 안내 (예: 이미 등록된 피보호자입니다)
+      debugPrint('회원가입 실패: ${e.response?.data ?? e.message}');
+      if (!mounted) return;
+      final data = e.response?.data;
+      final msg = (data is Map && data['message'] is String)
+          ? data['message'] as String
+          : '등록에 실패했습니다. 입력값을 확인하고 다시 시도해주세요.';
+      _snack(msg);
     } catch (e) {
       debugPrint('회원가입 실패: $e');
       if (!mounted) return;
-      _snack('등록에 실패했습니다. 입력값을 확인하고 다시 시도해주세요.');
+      _snack('등록에 실패했습니다. 네트워크 상태를 확인해주세요.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
