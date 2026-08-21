@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // TextInputFormatter, TextInputType
+import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import '../services/ward_service.dart';
-import '../utils/input_formatters.dart';
 import '../widgets/logout_button.dart';
+import '../widgets/reg_steps.dart';
 
-/// 피보호자 등록 화면. 6개 항목을 입력받아 서버에 등록한다.
+/// 회원가입 — 2단계 위저드 (STEP1 보호자 정보 / STEP2 피보호자 정보).
+/// 백엔드 미지원 필드(보호자 이름·연락처, 기저질환)는 수집만 하고 저장은 TODO.
 class WardRegisterPage extends StatefulWidget {
   const WardRegisterPage({super.key});
 
@@ -14,191 +15,166 @@ class WardRegisterPage extends StatefulWidget {
 }
 
 class _WardRegisterPageState extends State<WardRegisterPage> {
-  // 여러 입력칸을 한 번에 검증하기 위한 Form 열쇠
-  final _formKey = GlobalKey<FormState>();
+  int _step = 0;
+  final _form1 = GlobalKey<FormState>();
+  final _form2 = GlobalKey<FormState>();
 
-  // 각 입력칸의 글자를 담는 그릇
-  final _name = TextEditingController();
-  final _birthDate = TextEditingController();
+  // STEP1 보호자 정보
+  final _guardianName = TextEditingController();
+  final _guardianPhone = TextEditingController();
+  final _relationship = TextEditingController();
+  // STEP2 피보호자 정보
+  final _wardName = TextEditingController();
   final _address = TextEditingController();
-  final _phone = TextEditingController();
+  final _wardPhone = TextEditingController();
+  final _disease = TextEditingController();
   final _deviceMac = TextEditingController();
 
-  // 관계는 자유 입력 대신 드롭다운으로 선택
-  String? _relationship;
-  static const _relationshipOptions = ['자녀', '부모', '배우자', '형제자매', '친척', '기타'];
-
-  bool _loading = false; // 등록 진행 중이면 true
+  bool _loading = false;
 
   @override
   void dispose() {
-    // 화면이 사라질 때 그릇들 정리 (메모리 누수 방지)
-    _name.dispose();
-    _birthDate.dispose();
-    _address.dispose();
-    _phone.dispose();
-    _deviceMac.dispose();
+    for (final c in [
+      _guardianName, _guardianPhone, _relationship,
+      _wardName, _address, _wardPhone, _disease, _deviceMac,
+    ]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    // 모든 입력칸 유효성 검사. 하나라도 실패하면 중단.
-    if (!_formKey.currentState!.validate()) return;
+  void _next() {
+    if (_form1.currentState!.validate()) setState(() => _step = 1);
+  }
 
+  Future<void> _submit() async {
+    if (!_form2.currentState!.validate()) return;
+    if (!_form1.currentState!.validate()) {
+      setState(() => _step = 0);
+      return;
+    }
     setState(() => _loading = true);
     try {
       await WardService.registerWard(
-        name: _name.text.trim(),
-        birthDate: _birthDate.text.trim(),
+        name: _wardName.text.trim(),
+        // 생년월일/나이 미수집 → birthDate 생략 (서버는 없으면 age 계산 스킵)
         address: _address.text.trim(),
-        phone: _phone.text.trim(),
-        relationship: _relationship ?? '',
-        deviceMac: _deviceMac.text.trim().toUpperCase(), // MAC 대문자로 통일
+        phone: _wardPhone.text.trim(),
+        relationship: _relationship.text.trim(),
+        deviceMac: _deviceMac.text.trim().toUpperCase(),
+        // TODO(백엔드): 보호자 이름/연락처, 기저질환(_disease) 저장 필드 연동
       );
       if (!mounted) return;
-      // 등록 성공 안내 (루트 ScaffoldMessenger라 화면 전환 후에도 표시됨)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('피보호자 등록이 완료되었습니다.')),
-      );
-      // 홈으로 (뒤로가기로 등록 화면 못 돌아오게 context.go)
+      _snack('회원가입이 완료되었습니다.');
       context.go('/home');
-    } catch (e) {
-      debugPrint('피보호자 등록 실패: $e'); // 상세 에러는 개발자 로그에만
+    } on DioException catch (e) {
+      // 서버가 내려주는 사유({message})를 그대로 안내 (예: 이미 등록된 피보호자입니다)
+      debugPrint('회원가입 실패: ${e.response?.data ?? e.message}');
       if (!mounted) return;
-      // 사용자에겐 일반 안내 문구 (예외 전문 노출 안 함)
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('등록에 실패했습니다. 입력값을 확인하고 다시 시도해주세요.')),
-      );
+      final data = e.response?.data;
+      final msg = (data is Map && data['message'] is String)
+          ? data['message'] as String
+          : '등록에 실패했습니다. 입력값을 확인하고 다시 시도해주세요.';
+      _snack(msg);
+    } catch (e) {
+      debugPrint('회원가입 실패: $e');
+      if (!mounted) return;
+      _snack('등록에 실패했습니다. 네트워크 상태를 확인해주세요.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  void _snack(String m) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('피보호자 등록'),
-        actions: const [LogoutButton()],
-      ),
+      appBar: AppBar(title: const Text('회원가입'), actions: const [LogoutButton()]),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _field(_name, '이름', required: true),
-              _field(
-                _birthDate,
-                '생년월일 (YYYY-MM-DD)',
-                keyboardType: TextInputType.number,
-                inputFormatters: [DashFormatter([4, 2, 2])], // 20000101 → 2000-01-01
-                // 월 01~12, 일 01~31 범위 (정규식만으로는 2월 30일 등은 못 거름)
-                pattern: r'^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$',
-                patternMsg: '생년월일 형식이 올바르지 않습니다. (예: 2000-01-01)',
-                // 실제 존재하는 날짜인지 + 미래 날짜 아닌지 검증
-                extraCheck: (v) {
-                  final parts = v.split('-'); // [연, 월, 일]
-                  final date = DateTime.tryParse(v);
-                  // 파싱은 되지만 2월 30일처럼 굴러간 날짜면 월/일이 안 맞음
-                  if (date == null ||
-                      date.month != int.parse(parts[1]) ||
-                      date.day != int.parse(parts[2])) {
-                    return '존재하지 않는 날짜입니다.';
-                  }
-                  if (date.isAfter(DateTime.now())) {
-                    return '미래 날짜는 입력할 수 없습니다.';
-                  }
-                  if (date.year < 1900) {
-                    return '생년월일을 다시 확인해주세요.';
-                  }
-                  return null;
-                },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('STEP ${_step + 1} / 2',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('회원가입',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('보호자와 피보호자 정보를 입력해주세요',
+                textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 16),
+            _tabToggle(),
+            const SizedBox(height: 20),
+            IndexedStack(index: _step, children: [
+              RegStep1(
+                formKey: _form1,
+                name: _guardianName,
+                phone: _guardianPhone,
+                relationship: _relationship,
               ),
-              _field(_address, '주소', required: true),
-              _field(
-                _phone,
-                '전화번호 (010-XXXX-XXXX)',
-                required: true,
-                keyboardType: TextInputType.number,
-                inputFormatters: [DashFormatter([3, 4, 4])], // 01012345678 → 010-1234-5678
-                pattern: r'^010-\d{4}-\d{4}$',
-                patternMsg: '전화번호 형식이 올바르지 않습니다. (010-XXXX-XXXX)',
+              RegStep2(
+                formKey: _form2,
+                name: _wardName,
+                address: _address,
+                phone: _wardPhone,
+                disease: _disease,
+                deviceMac: _deviceMac,
               ),
-              // 관계: 드롭다운 선택
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: DropdownButtonFormField<String>(
-                  initialValue: _relationship,
-                  decoration: const InputDecoration(
-                    labelText: '관계',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: _relationshipOptions
-                      .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                      .toList(),
-                  onChanged: (value) => setState(() => _relationship = value),
-                  // 관계는 필수 — 안 고르면 등록 막음
-                  validator: (value) => value == null ? '관계를 선택해주세요' : null,
-                ),
-              ),
-              _field(
-                _deviceMac,
-                '기기 MAC 주소 (AA:BB:CC:DD:EE:FF)',
-                required: true,
-                inputFormatters: [MacFormatter()], // 16진수만, 2자리마다 ':' 자동 삽입 + 대문자
-                pattern: r'^([0-9A-F]{2}:){5}[0-9A-F]{2}$',
-                patternMsg: 'MAC 주소 형식이 올바르지 않습니다. (예: AA:BB:CC:DD:EE:FF)',
-              ),
-              const SizedBox(height: 24),
-              _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : FilledButton(
-                      onPressed: _submit,
-                      child: const Text('등록하기'),
-                    ),
-            ],
-          ),
+            ]),
+            const SizedBox(height: 12),
+            if (_loading) const Center(child: CircularProgressIndicator()) else _nav(),
+          ],
         ),
       ),
     );
   }
 
-  // 입력칸 하나를 만드는 도우미. required=필수 여부, pattern=형식 검사(선택).
-  Widget _field(
-    TextEditingController controller,
-    String label, {
-    bool required = false,
-    String? pattern,
-    String? patternMsg,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String value)? extraCheck, // 형식 통과 후 추가 검증(선택)
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
-        validator: (value) {
-          final v = (value ?? '').trim();
-          if (required && v.isEmpty) return '$label 입력해주세요';
-          if (pattern != null && v.isNotEmpty && !RegExp(pattern).hasMatch(v)) {
-            return patternMsg;
-          }
-          if (extraCheck != null && v.isNotEmpty) {
-            final msg = extraCheck(v);
-            if (msg != null) return msg;
-          }
-          return null; // 통과
-        },
+  Widget _tabToggle() {
+    return Row(
+      children: [
+        Expanded(child: _tab('보호자 정보', 0)),
+        const SizedBox(width: 8),
+        Expanded(child: _tab('피보호자 정보', 1)),
+      ],
+    );
+  }
+
+  Widget _tab(String label, int index) {
+    final selected = _step == index;
+    final primary = Theme.of(context).colorScheme.primary;
+    return FilledButton(
+      onPressed: () => index == 1 ? _next() : setState(() => _step = 0),
+      style: FilledButton.styleFrom(
+        backgroundColor: selected ? primary : Colors.grey.shade300,
+        foregroundColor: selected ? Colors.white : Colors.black54,
       ),
+      child: Text(label),
+    );
+  }
+
+  Widget _nav() {
+    if (_step == 0) {
+      return FilledButton(onPressed: _next, child: const Text('다음'));
+    }
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+              onPressed: () => setState(() => _step = 0),
+              child: const Text('이전')),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FilledButton(onPressed: _submit, child: const Text('가입 완료')),
+        ),
+      ],
     );
   }
 }

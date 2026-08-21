@@ -24,23 +24,23 @@ class WardService {
   /// 피보호자 등록. POST /api/wards/me
   static Future<void> registerWard({
     required String name,
-    required String birthDate,
+    String? birthDate, // 미수집 시 생략 (빈 문자열 대신 필드 자체를 안 보냄)
     required String address,
     required String phone,
     required String relationship,
     required String deviceMac,
   }) async {
-    await ApiClient.dio.post(
-      '/api/wards/me',
-      data: {
-        'name': name,
-        'birthDate': birthDate,
-        'address': address,
-        'phone': phone,
-        'relationship': relationship,
-        'deviceMac': deviceMac,
-      },
-    );
+    final data = <String, dynamic>{
+      'name': name,
+      'address': address,
+      'phone': phone,
+      'relationship': relationship,
+      'deviceMac': deviceMac,
+    };
+    if (birthDate != null && birthDate.isNotEmpty) {
+      data['birthDate'] = birthDate;
+    }
+    await ApiClient.dio.post('/api/wards/me', data: data);
   }
 
   /// 비상 연락처 목록 조회. GET /api/wards/me/contacts
