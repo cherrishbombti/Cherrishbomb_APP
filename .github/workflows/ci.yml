@@ -45,6 +45,11 @@ jobs:
           channel: stable
           cache: true
 
+      # 포맷터가 언어 버전을 로컬과 동일하게 읽으려면 의존성이 있어야 한다.
+      # 이게 없으면 flutter_lints 해석 실패 + 포맷 결과가 로컬과 갈린다.
+      - name: 의존성 설치
+        run: flutter pub get
+
       # 팀 공통 컨벤션 120자에 맞춘다. (dart format 기본값은 80자)
       # analysis_options.yaml 의 formatter.page_width 와 반드시 같은 값이어야 한다.
       # 둘이 다르면 IDE 저장 결과와 CI 결과가 갈려서 무한히 싸운다.
