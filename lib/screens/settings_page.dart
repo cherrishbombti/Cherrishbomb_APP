@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/logout_button.dart';
 import 'contacts_page.dart';
 import 'health_page.dart';
+import 'organization_page.dart';
 
 /// 설정 화면. 비상 연락망 등 설정 항목으로 이동.
 class SettingsPage extends StatelessWidget {
@@ -10,10 +11,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('설정'),
-        actions: const [LogoutButton()],
-      ),
+      appBar: AppBar(title: const Text('설정'), actions: const [LogoutButton()]),
       body: ListView(
         children: [
           ListTile(
@@ -22,10 +20,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('연락처 조회 · 추가'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ContactsPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsPage()));
             },
           ),
           const Divider(height: 1),
@@ -35,10 +30,17 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('기저질환 · 복용약 · 병력'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HealthPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthPage()));
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.apartment),
+            title: const Text('기관 연동'),
+            subtitle: const Text('사회복지사 기관과 연동'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const OrganizationPage()));
             },
           ),
           const Divider(height: 1),
