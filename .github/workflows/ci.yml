@@ -1,13 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Cherrycherry_BE — CI (안전판 버전)
+#
+# 이전 버전은 Spotless·Flyway 가 저장소에 있다고 가정해서, 준비 전에 적용하면
+# 세 잡이 한꺼번에 빨개졌다. 이 버전은 build.gradle 을 먼저 훑어보고
+# 준비된 검사만 실행한다.
+#
+#   준비 상태 확인  →  build.gradle 에 spotless / schemaTest 가 있는지 확인
+#   포맷 검사       →  Spotless 가 있을 때만 실행 (없으면 skip + notice)
+#   빌드 · 테스트    →  항상 실행
+#   스키마 검증     →  schemaTest 태스크가 있을 때만 실행 (없으면 skip + notice)
+#   PR 크기 확인    →  경고만
+#
+# 팀원이 build.gradle 에 Spotless / schemaTest 를 추가하는 순간
+# 이 파일을 고치지 않아도 해당 검사가 자동으로 켜진다.
+# ═══════════════════════════════════════════════════════════════════════
 
 name: CI
 
 on:
   push:
     branches: [ main, develop ]
-    paths-ignore: [ '**.md', '.gitignore' ]
+    paths-ignore: [ '**.md', 'docs/**', '.gitignore' ]
   pull_request:
     branches: [ main, develop ]
-    paths-ignore: [ '**.md', '.gitignore' ]
+    paths-ignore: [ '**.md', 'docs/**', '.gitignore' ]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -18,57 +34,89 @@ permissions:
 
 jobs:
   # ─────────────────────────────────────────────────────────────
-  # 포맷 검사 — 빠르게 끝나므로 별도 잡으로 분리한다.
-  # 분석·테스트와 병렬로 돌아 전체 시간이 늘지 않고,
-  # 실패했을 때 "포맷 문제"임이 잡 이름만 봐도 드러난다.
+  # 0) 준비 상태 확인 — 10초면 끝난다.
+  #    아직 도입되지 않은 도구의 잡을 아예 띄우지 않기 위한 사전 점검.
   # ─────────────────────────────────────────────────────────────
-  format:
-    name: 포맷 검사
+  preflight:
+    name: 준비 상태 확인
     runs-on: ubuntu-latest
+    outputs:
+      spotless: ${{ steps.probe.outputs.spotless }}
+      schema: ${{ steps.probe.outputs.schema }}
 
     steps:
       - name: 체크아웃
         uses: actions/checkout@v7
 
-      - name: Flutter 설치
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+      - name: 도구 도입 여부 확인
+        id: probe
+        run: |
+          has() { grep -q "$1" build.gradle && echo true || echo false; }
 
-      # 팀 공통 컨벤션 120자에 맞춘다. (dart format 기본값은 80자)
-      # analysis_options.yaml 의 formatter.page_width 와 반드시 같은 값이어야 한다.
-      # 둘이 다르면 IDE 저장 결과와 CI 결과가 갈려서 무한히 싸운다.
-      - name: 포맷 검사
-        run: dart format --output=none --set-exit-if-changed --line-length 120 .
+          SPOTLESS=$(has 'com.diffplug.spotless')
+          SCHEMA=$(has 'schemaTest')
+
+          echo "spotless=$SPOTLESS" >> "$GITHUB_OUTPUT"
+          echo "schema=$SCHEMA"     >> "$GITHUB_OUTPUT"
+
+          echo "Spotless   : $SPOTLESS"
+          echo "schemaTest : $SCHEMA"
+
+          if [ "$SPOTLESS" = "false" ]; then
+            echo "::notice::Spotless 플러그인이 없어 '포맷 검사'를 건너뜁니다. build.gradle 에 추가되면 자동으로 켜집니다."
+          fi
+          if [ "$SCHEMA" = "false" ]; then
+            echo "::notice::schemaTest 태스크가 없어 '스키마 검증'을 건너뜁니다. Flyway 도입 후 자동으로 켜집니다."
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  # 1) 포맷 검사 — Spotless 도입 후 자동 활성화
+  # ─────────────────────────────────────────────────────────────
+  format:
+    name: 포맷 검사
+    runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.spotless == 'true'
+
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v7
+
+      - name: JDK 21 설치
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v6
+
+      # spotless { enforceCheck = false } 라서 build 잡과 겹치지 않는다.
+      - name: Spotless 검사
+        run: ./gradlew spotlessCheck
 
       - name: 실패 시 안내
         if: failure()
         run: |
           echo "::error::포맷 규칙에 어긋난 파일이 있습니다."
-          echo ""
-          echo "  로컬에서 아래를 실행하고 커밋하세요:"
-          echo "      dart format --line-length 120 ."
-          echo ""
-          echo "  Android Studio / VS Code 에서 'Format on Save' 를 켜두면"
-          echo "  analysis_options.yaml 의 page_width 를 따라 자동으로 맞춰집니다."
+          echo "  로컬에서 ./gradlew spotlessApply 실행 후 커밋하세요."
 
   # ─────────────────────────────────────────────────────────────
-  # 분석 · 테스트
+  # 2) 빌드 · 테스트 — 항상 실행
   # ─────────────────────────────────────────────────────────────
-  analyze:
-    name: 분석 · 테스트
+  build:
+    name: 빌드 · 테스트
     runs-on: ubuntu-latest
 
     steps:
       - name: 체크아웃
         uses: actions/checkout@v7
 
-      # BE·FE 와 같은 규칙. 앱에도 API 키·keystore 가 들어올 수 있다.
+      # 자격증명이 저장소에 들어오는 것을 막는다.
       - name: 자격증명 커밋 여부 확인
         run: |
           leaked=$(git ls-files | grep -E \
-            '(^|/)\.env$|(^|/)\.env\.(local|dev|prod)|google-services\.json$|GoogleService-Info\.plist$|\.(jks|keystore|p12|pem)$|key\.properties$' \
+            '(^|/)\.env$|(^|/)\.env\.(local|dev|prod)|application-(local|dev|prod|secret)\.ya?ml$|\.(pem|p12|jks|key)$|firebase-adminsdk|service-account.*\.json$' \
             || true)
           if [ -n "$leaked" ]; then
             echo "::error::자격증명으로 보이는 파일이 커밋돼 있습니다."
@@ -77,80 +125,111 @@ jobs:
           fi
           echo "자격증명 파일 미커밋 확인 완료"
 
-      # Flutter 는 공식 액션이 없어 사실상 표준인 서드파티 액션을 쓴다.
-      # 재현성이 중요해지면 로컬 `flutter --version` 결과로 버전을 고정할 것.
-      #   flutter-version: '3.x.y'
-      - name: Flutter 설치
-        uses: subosito/flutter-action@v2
+      # gradle-wrapper.jar 가 .gitignore 의 *.jar 규칙에 걸려 빠졌던 사고가 있었다.
+      - name: Gradle Wrapper 존재 확인
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "::error file=gradle/wrapper/gradle-wrapper.jar::gradle-wrapper.jar 가 저장소에 없습니다."
+            echo "  .gitignore 의 '*.jar' 규칙에 걸렸을 가능성이 높습니다."
+            echo "  해결: .gitignore 에 '!gradle/wrapper/gradle-wrapper.jar' 추가 후 커밋"
+            exit 1
+          fi
+          echo "gradle-wrapper.jar 확인 완료"
+
+      - name: Gradle Wrapper 무결성 검증
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: JDK 21 설치
+        uses: actions/setup-java@v5
         with:
-          channel: stable
-          cache: true
+          distribution: temurin
+          java-version: '21'
 
-      - name: 의존성 설치
-        run: flutter pub get
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v6
 
-      # --fatal-infos 를 켜면 info 수준 린트도 실패로 취급한다.
-      # 처음 켤 때 지적이 쏟아지면 일단 빼고, 정리된 뒤 다시 켜는 편이 낫다.
-      - name: 정적 분석
-        run: flutter analyze --fatal-infos
+      # 테스트는 src/test/resources/application.yaml 의 H2 설정으로 돈다.
+      # 실제 DB·OAuth·JWT·Firebase 자격증명 없이 통과해야 정상이다.
+      - name: 빌드 및 테스트
+        run: ./gradlew build --stacktrace
 
-      - name: 테스트
-        run: flutter test --reporter expanded
-
-      - name: 테스트 실패 시 안내
+      - name: 실패 시 안내
         if: failure()
         run: |
-          echo "::notice::스모크 테스트는 앱 첫 화면 구조에 의존합니다."
-          echo "  라우팅(main.dart / app_router.dart)을 바꾸면 함께 갱신해주세요."
+          echo "::notice::contextLoads 가 Dialect 오류로 실패한다면 src/test/resources/application.yaml 이 없는 것입니다."
+          echo "  main 의 application.yaml 이 \${DB_URL} 을 요구하는데 CI 에는 .env 가 없습니다."
+
+      - name: 테스트 리포트 업로드
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7
+          if-no-files-found: ignore
 
   # ─────────────────────────────────────────────────────────────
-  # Android 빌드 — 실제로 컴파일되는지 확인한다.
-  # analyze 만으로는 잡히지 않는 Gradle·플러그인 문제가 여기서 걸린다.
-  # 느리다고 판단되면 이 잡만 지워도 된다.
+  # 3) 스키마 검증 — Flyway + schemaTest 도입 후 자동 활성화
+  #
+  # 엔티티만 고치고 마이그레이션을 빼먹으면 여기서 잡힌다.
+  # BE #43(priority NOT NULL 500)·BE #46(org_code 유니크)이 같은 사고였다.
+  #
+  # ⚠️ 운영이 MariaDB 이므로 MariaDB 이미지를 쓴다. 운영과 다른 엔진으로
+  #    검증하면 타입·예약어 처리 차이 때문에 검증의 의미가 반감된다.
   # ─────────────────────────────────────────────────────────────
-  build:
-    name: Android 빌드
+  schema:
+    name: 스키마 검증
     runs-on: ubuntu-latest
-    needs: analyze
+    needs: preflight
+    if: needs.preflight.outputs.schema == 'true'
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root
+          MARIADB_DATABASE: cherry_ci
+          MARIADB_USER: cherry
+          MARIADB_PASSWORD: ci-pass
+        ports:
+          - 3306:3306
+        # 컨테이너가 실제로 질의를 받을 수 있을 때까지 기다린다.
+        # 없으면 첫 커넥션이 간헐적으로 실패해 CI 가 불규칙하게 빨개진다.
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
 
     steps:
       - name: 체크아웃
         uses: actions/checkout@v7
 
-      - name: JDK 17 설치
+      - name: JDK 21 설치
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
-      - name: Flutter 설치
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v6
 
-      - name: 의존성 설치
-        run: flutter pub get
+      - name: 스키마 검증
+        run: ./gradlew schemaTest --stacktrace
+        env:
+          DB_URL: jdbc:mariadb://127.0.0.1:3306/cherry_ci
+          DB_USERNAME: cherry
+          DB_PASSWORD: ci-pass
 
-      # FCM 을 붙이면 android/app/google-services.json 이 필요해진다.
-      # 그 파일은 커밋하지 않으므로, 그때 아래 스텝을 살려 Secrets 에서 복원한다.
-      # - name: google-services.json 복원
-      #   run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
-
-      - name: 디버그 APK 빌드
-        run: flutter build apk --debug
-
-      - name: APK 업로드
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 3
-          if-no-files-found: ignore
+      - name: 실패 시 안내
+        if: failure()
+        run: |
+          echo "::error::엔티티와 마이그레이션이 어긋났습니다."
+          echo "  엔티티만 바꾸고 V{번호}__{내용}.sql 을 안 만들었을 가능성이 높습니다."
+          echo "  로컬 재현:  docker compose up -d && ./gradlew schemaTest"
 
   # ─────────────────────────────────────────────────────────────
-  # 선택 잡 — 실패시키지 않고 경고만 남긴다. BE·FE 와 동일.
+  # 4) PR 크기 확인 — 실패시키지 않고 경고만 남긴다.
   # ─────────────────────────────────────────────────────────────
   pr-size:
     name: PR 크기 확인
@@ -166,9 +245,9 @@ jobs:
         run: |
           BASE="origin/${{ github.base_ref }}"
           FILES=$(git diff --name-only "$BASE"...HEAD -- . \
-                  ':(exclude)**.md' ':(exclude)pubspec.lock' | wc -l)
+                  ':(exclude)**.md' ':(exclude)docs/**' | wc -l)
           LINES=$(git diff --numstat "$BASE"...HEAD -- . \
-                  ':(exclude)**.md' ':(exclude)pubspec.lock' \
+                  ':(exclude)**.md' ':(exclude)docs/**' \
                   | awk '{a+=$1; d+=$2} END {print a+d+0}')
           echo "변경 파일 ${FILES}개 / 변경 줄 ${LINES}줄"
           if [ "$FILES" -gt 10 ] || [ "$LINES" -gt 300 ]; then
