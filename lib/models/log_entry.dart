@@ -48,12 +48,7 @@ class LogPage {
   final int totalPages; // 전체 페이지 수
   final bool last; // 마지막 페이지 여부
 
-  LogPage({
-    required this.content,
-    required this.page,
-    required this.totalPages,
-    required this.last,
-  });
+  LogPage({required this.content, required this.page, required this.totalPages, required this.last});
 
   factory LogPage.fromJson(Map<String, dynamic> json) {
     final list = (json['content'] as List?) ?? [];

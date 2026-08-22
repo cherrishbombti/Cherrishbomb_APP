@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/log_entry.dart';
 import '../utils/date_format.dart';
 
@@ -16,12 +17,8 @@ class LogTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.circle, color: color, size: 14),
         title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text([
-          _dateTime(log.detectedAt),
-          if (hasSensor) '센서: ${log.sensorDetail}',
-        ].join('\n')),
-        trailing:
-            Text(_statusLabel(log.status), style: TextStyle(color: color, fontSize: 12)),
+        subtitle: Text([_dateTime(log.detectedAt), if (hasSensor) '센서: ${log.sensorDetail}'].join('\n')),
+        trailing: Text(_statusLabel(log.status), style: TextStyle(color: color, fontSize: 12)),
         isThreeLine: hasSensor,
       ),
     );

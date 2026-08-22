@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/ward_sensor.dart';
 import '../services/ward_service.dart';
 import '../utils/date_format.dart';
@@ -78,21 +79,21 @@ class _DevicePageState extends State<DevicePage> {
         padding: const EdgeInsets.all(16),
         children: [
           const Center(
-            child: Text('라즈베리파이 낙상 감지 센서',
-                style: TextStyle(color: Colors.grey)),
+            child: Text('라즈베리파이 낙상 감지 센서', style: TextStyle(color: Colors.grey)),
           ),
           const SizedBox(height: 12),
-          DeviceOnlineCard(
-            online: s.deviceOnline,
-            lastSeen: _lastSeen(s.deviceLastSeen),
-          ),
+          DeviceOnlineCard(online: s.deviceOnline, lastSeen: _lastSeen(s.deviceLastSeen)),
           const SizedBox(height: 12),
           // 배터리·신호는 백엔드 미제공 → 임시 표시
           const Row(
             children: [
-              Expanded(child: DeviceStatBox(value: '—', label: '배터리')),
+              Expanded(
+                child: DeviceStatBox(value: '—', label: '배터리'),
+              ),
               SizedBox(width: 12),
-              Expanded(child: DeviceStatBox(value: '—', label: '신호')),
+              Expanded(
+                child: DeviceStatBox(value: '—', label: '신호'),
+              ),
             ],
           ),
           const SizedBox(height: 12),

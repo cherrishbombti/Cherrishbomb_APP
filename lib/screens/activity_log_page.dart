@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/log_entry.dart';
 import '../services/ward_service.dart';
 import '../widgets/log_filter_bar.dart';
@@ -39,9 +40,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
   Future<void> _load() async {
     // 시작일 > 종료일이면 조회하지 않고 안내 (서버 INVALID_DATE_RANGE 방지)
     if (_from != null && _to != null && _from!.isAfter(_to!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('시작일이 종료일보다 늦을 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('시작일이 종료일보다 늦을 수 없습니다.')));
       return;
     }
     setState(() {
@@ -49,11 +48,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       _error = null;
     });
     try {
-      final data = await WardService.getLogs(
-        page: _pageNum,
-        from: _from,
-        to: _to,
-      );
+      final data = await WardService.getLogs(page: _pageNum, from: _from, to: _to);
       if (!mounted) return;
       setState(() {
         _data = data;
@@ -109,13 +104,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('활동 로그'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_alt_off),
-            tooltip: '필터 초기화',
-            onPressed: _resetFilter,
-          ),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.filter_alt_off), tooltip: '필터 초기화', onPressed: _resetFilter)],
       ),
       body: Column(
         children: [
@@ -154,10 +143,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       // 필터 유무에 따라 메시지 구분 (필터 안 걸었는데 "해당 기간" 표현은 혼란)
       final hasFilter = _from != null || _to != null;
       return Center(
-        child: Text(
-          hasFilter ? '해당 기간의 활동 이력이 없습니다.' : '아직 활동 이력이 없습니다.',
-          style: const TextStyle(color: Colors.grey),
-        ),
+        child: Text(hasFilter ? '해당 기간의 활동 이력이 없습니다.' : '아직 활동 이력이 없습니다.', style: const TextStyle(color: Colors.grey)),
       );
     }
     return RefreshIndicator(
@@ -166,8 +152,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
         controller: _scroll,
         padding: const EdgeInsets.all(16),
         itemCount: logs.length + 1, // 마지막 칸은 페이지네이션
-        itemBuilder: (_, i) =>
-            i < logs.length ? LogTile(logs[i]) : _pagination(),
+        itemBuilder: (_, i) => i < logs.length ? LogTile(logs[i]) : _pagination(),
       ),
     );
   }
@@ -181,15 +166,9 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: d.page > 0 ? () => _goPage(d.page - 1) : null,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_left), onPressed: d.page > 0 ? () => _goPage(d.page - 1) : null),
           Text('${d.page + 1} / ${d.totalPages}'),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: !d.last ? () => _goPage(d.page + 1) : null,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_right), onPressed: !d.last ? () => _goPage(d.page + 1) : null),
         ],
       ),
     );

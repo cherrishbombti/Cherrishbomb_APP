@@ -52,11 +52,7 @@ class WardService {
   }
 
   /// 비상 연락처 추가. POST /api/wards/me/contacts
-  static Future<void> addContact({
-    required String name,
-    required String phone,
-    required String relationship,
-  }) async {
+  static Future<void> addContact({required String name, required String phone, required String relationship}) async {
     await ApiClient.dio.post(
       '/api/wards/me/contacts',
       data: {'name': name, 'phone': phone, 'relationship': relationship},
@@ -83,21 +79,13 @@ class WardService {
 
   /// 활동·낙상 이력 조회. GET /api/wards/me/logs
   /// page/size는 페이지네이션, from/to는 날짜 필터(선택).
-  static Future<LogPage> getLogs({
-    int page = 0,
-    int size = 20,
-    DateTime? from,
-    DateTime? to,
-  }) async {
+  static Future<LogPage> getLogs({int page = 0, int size = 20, DateTime? from, DateTime? to}) async {
     // 값이 있는 쿼리만 골라 담는다. (null이면 서버에 안 보냄)
     final query = <String, dynamic>{'page': page, 'size': size};
     if (from != null) query['from'] = ymd(from);
     if (to != null) query['to'] = ymd(to);
 
-    final res = await ApiClient.dio.get(
-      '/api/wards/me/logs',
-      queryParameters: query,
-    );
+    final res = await ApiClient.dio.get('/api/wards/me/logs', queryParameters: query);
     return LogPage.fromJson(res.data);
   }
 
@@ -111,25 +99,15 @@ class WardService {
 
   /// 건강 정보 전체 저장(upsert). PUT /api/wards/me/health
   /// 세 필드 모두 필수 — 비우려면 빈 문자열을 보낸다.
-  static Future<void> putHealth({
-    required String disease,
-    required String medication,
-    required String memo,
-  }) async {
-    await ApiClient.dio.put(
-      '/api/wards/me/health',
-      data: {'disease': disease, 'medication': medication, 'memo': memo},
-    );
+  static Future<void> putHealth({required String disease, required String medication, required String memo}) async {
+    await ApiClient.dio.put('/api/wards/me/health', data: {'disease': disease, 'medication': medication, 'memo': memo});
   }
 
   // ---- 알림 (#21) ----
 
   /// 알림 목록 조회. GET /api/wards/me/notifications
   static Future<NotiPage> getNotifications({int page = 0, int size = 20}) async {
-    final res = await ApiClient.dio.get(
-      '/api/wards/me/notifications',
-      queryParameters: {'page': page, 'size': size},
-    );
+    final res = await ApiClient.dio.get('/api/wards/me/notifications', queryParameters: {'page': page, 'size': size});
     return NotiPage.fromJson(res.data);
   }
 

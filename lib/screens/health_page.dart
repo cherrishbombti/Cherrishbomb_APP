@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/ward_health.dart';
 import '../services/ward_service.dart';
 import '../widgets/health_form.dart';
@@ -81,16 +82,12 @@ class _HealthPageState extends State<HealthPage> {
         memo: _memo.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('저장되었습니다.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장되었습니다.')));
       _load(); // 최종 수정 정보 갱신 + 조회 모드로
     } catch (e) {
       debugPrint('건강정보 저장 실패: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -104,14 +101,8 @@ class _HealthPageState extends State<HealthPage> {
         title: const Text('편집 취소'),
         content: const Text('저장하지 않은 변경 내용이 있습니다. 나가시겠습니까?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('계속 편집'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('나가기'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('계속 편집')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('나가기')),
         ],
       ),
     );
@@ -131,20 +122,16 @@ class _HealthPageState extends State<HealthPage> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('건강 정보 관리'),
-        actions: [
-          if (!_loading && _error == null && !_editing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: '수정',
-              onPressed: () => setState(() => _editing = true),
-            ),
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _errorView()
-              : (_editing
+          actions: [
+            if (!_loading && _error == null && !_editing)
+              IconButton(icon: const Icon(Icons.edit), tooltip: '수정', onPressed: () => setState(() => _editing = true)),
+          ],
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? _errorView()
+            : (_editing
                   ? HealthForm(
                       disease: _disease,
                       medication: _medication,
@@ -159,13 +146,13 @@ class _HealthPageState extends State<HealthPage> {
   }
 
   Widget _errorView() => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('다시 시도')),
-          ],
-        ),
-      );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(_error!),
+        const SizedBox(height: 12),
+        FilledButton(onPressed: _load, child: const Text('다시 시도')),
+      ],
+    ),
+  );
 }
