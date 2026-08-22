@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'api_client.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
@@ -5,6 +6,7 @@ import '../models/ward_contact.dart';
 import '../models/log_entry.dart';
 import '../models/ward_health.dart';
 import '../models/app_notification.dart';
+import '../models/organization_link.dart';
 import '../utils/date_format.dart';
 
 /// 피보호자(ward) 관련 API 담당. (#2의 ApiClient 사용 → 토큰 자동 첨부)
@@ -52,11 +54,7 @@ class WardService {
   }
 
   /// 비상 연락처 추가. POST /api/wards/me/contacts
-  static Future<void> addContact({
-    required String name,
-    required String phone,
-    required String relationship,
-  }) async {
+  static Future<void> addContact({required String name, required String phone, required String relationship}) async {
     await ApiClient.dio.post(
       '/api/wards/me/contacts',
       data: {'name': name, 'phone': phone, 'relationship': relationship},
@@ -83,21 +81,13 @@ class WardService {
 
   /// 활동·낙상 이력 조회. GET /api/wards/me/logs
   /// page/size는 페이지네이션, from/to는 날짜 필터(선택).
-  static Future<LogPage> getLogs({
-    int page = 0,
-    int size = 20,
-    DateTime? from,
-    DateTime? to,
-  }) async {
+  static Future<LogPage> getLogs({int page = 0, int size = 20, DateTime? from, DateTime? to}) async {
     // 값이 있는 쿼리만 골라 담는다. (null이면 서버에 안 보냄)
     final query = <String, dynamic>{'page': page, 'size': size};
     if (from != null) query['from'] = ymd(from);
     if (to != null) query['to'] = ymd(to);
 
-    final res = await ApiClient.dio.get(
-      '/api/wards/me/logs',
-      queryParameters: query,
-    );
+    final res = await ApiClient.dio.get('/api/wards/me/logs', queryParameters: query);
     return LogPage.fromJson(res.data);
   }
 
@@ -111,25 +101,15 @@ class WardService {
 
   /// 건강 정보 전체 저장(upsert). PUT /api/wards/me/health
   /// 세 필드 모두 필수 — 비우려면 빈 문자열을 보낸다.
-  static Future<void> putHealth({
-    required String disease,
-    required String medication,
-    required String memo,
-  }) async {
-    await ApiClient.dio.put(
-      '/api/wards/me/health',
-      data: {'disease': disease, 'medication': medication, 'memo': memo},
-    );
+  static Future<void> putHealth({required String disease, required String medication, required String memo}) async {
+    await ApiClient.dio.put('/api/wards/me/health', data: {'disease': disease, 'medication': medication, 'memo': memo});
   }
 
   // ---- 알림 (#21) ----
 
   /// 알림 목록 조회. GET /api/wards/me/notifications
   static Future<NotiPage> getNotifications({int page = 0, int size = 20}) async {
-    final res = await ApiClient.dio.get(
-      '/api/wards/me/notifications',
-      queryParameters: {'page': page, 'size': size},
-    );
+    final res = await ApiClient.dio.get('/api/wards/me/notifications', queryParameters: {'page': page, 'size': size});
     return NotiPage.fromJson(res.data);
   }
 
@@ -141,5 +121,54 @@ class WardService {
   /// 전체 읽음 처리. PATCH /api/wards/me/notifications/read-all
   static Future<void> readAllNotifications() async {
     await ApiClient.dio.patch('/api/wards/me/notifications/read-all');
+  }
+
+  // ---- 기관 연동 (백엔드 #46 리뷰 중 → 목으로 선구현) ----
+  // TODO: #46 머지 후 _orgMock=false 로 바꾸면 실제 API로 동작.
+  static const bool _orgMock = true;
+
+  /// 연동 상태 조회. GET /api/wards/me/organization
+  static Future<OrganizationLink> getOrganization() async {
+    if (_orgMock) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      return OrganizationLink(linked: false); // 초기: 미연동
+    }
+    final res = await ApiClient.dio.get('/api/wards/me/organization');
+    return OrganizationLink.fromJson(res.data);
+  }
+
+  /// 기관 연동/변경. PATCH /api/wards/me/organization {orgCode: 숫자}
+  static Future<OrganizationLink> linkOrganization(int orgCode) async {
+    if (_orgMock) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (orgCode == 1001) {
+        return OrganizationLink(linked: true, organizationId: 3, organizationName: '○○종합사회복지관', orgCode: 1001);
+      }
+      throw _mockError(404, 'O003', '존재하지 않는 기관번호입니다.');
+    }
+    final res = await ApiClient.dio.patch('/api/wards/me/organization', data: {'orgCode': orgCode});
+    return OrganizationLink.fromJson(res.data);
+  }
+
+  /// 기관 연동 해제. DELETE /api/wards/me/organization (멱등)
+  static Future<void> unlinkOrganization() async {
+    if (_orgMock) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      return;
+    }
+    await ApiClient.dio.delete('/api/wards/me/organization');
+  }
+
+  // 목 에러: 실제 서버 에러(DioException + {code,message})와 같은 형태로 던짐.
+  static DioException _mockError(int status, String code, String message) {
+    final opts = RequestOptions(path: '/api/wards/me/organization');
+    return DioException(
+      requestOptions: opts,
+      response: Response(
+        requestOptions: opts,
+        statusCode: status,
+        data: {'status': status, 'code': code, 'message': message},
+      ),
+    );
   }
 }

@@ -29,8 +29,7 @@ class HealthForm extends StatelessWidget {
         const SizedBox(height: 12),
         _field('복용약', medication, hint: '예: 메트포르민', max: 255),
         const SizedBox(height: 12),
-        _field('기타 병력·메모', memo,
-            hint: '예: 2024년 낙상 이력', lines: 4, max: 2000),
+        _field('기타 병력·메모', memo, hint: '예: 2024년 낙상 이력', lines: 4, max: 2000),
         const SizedBox(height: 20),
         if (saving)
           const Center(child: CircularProgressIndicator())
@@ -38,8 +37,7 @@ class HealthForm extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                    onPressed: onCancel, child: const Text('취소')),
+                child: OutlinedButton(onPressed: onCancel, child: const Text('취소')),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -51,17 +49,12 @@ class HealthForm extends StatelessWidget {
     );
   }
 
-  Widget _field(String label, TextEditingController c,
-      {String? hint, int lines = 1, required int max}) {
+  Widget _field(String label, TextEditingController c, {String? hint, int lines = 1, required int max}) {
     return TextField(
       controller: c,
       maxLines: lines,
       maxLength: max, // 초과 입력 차단 + 하단 카운터 (서버 400 방지)
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: InputDecoration(labelText: label, hintText: hint, border: const OutlineInputBorder()),
     );
   }
 }

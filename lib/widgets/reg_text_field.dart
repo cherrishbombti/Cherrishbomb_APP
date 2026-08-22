@@ -32,10 +32,7 @@ class RegTextField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-        ),
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
         validator: (value) {
           final v = (value ?? '').trim();
           if (required && v.isEmpty) return '$label 입력해주세요';

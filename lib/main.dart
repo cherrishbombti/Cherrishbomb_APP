@@ -14,9 +14,7 @@ class CherrishbombApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '낙상감지 핫 라인 시스템',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       // 라우팅은 전부 appRouter(go_router)가 담당
       routerConfig: appRouter,
     );

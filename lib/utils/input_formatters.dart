@@ -8,15 +8,11 @@ class DashFormatter extends TextInputFormatter {
   DashFormatter(this.groups);
 
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     // 숫자만 남기고
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
     final maxLen = groups.reduce((a, b) => a + b);
-    final trimmed =
-        digits.length > maxLen ? digits.substring(0, maxLen) : digits;
+    final trimmed = digits.length > maxLen ? digits.substring(0, maxLen) : digits;
 
     // 그룹 단위로 잘라서 '-'로 연결
     final buffer = StringBuffer();
@@ -41,10 +37,7 @@ class DashFormatter extends TextInputFormatter {
 /// 예) aabbccddeeff → AA:BB:CC:DD:EE:FF
 class MacFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     // 16진수만 남기고 대문자화, 최대 12자(6쌍)
     var hex = newValue.text.toUpperCase().replaceAll(RegExp(r'[^0-9A-F]'), '');
     if (hex.length > 12) hex = hex.substring(0, 12);

@@ -1,11 +1,11 @@
 # Cherrishbomb App (보호자 앱)
 
-낙상감지 시스템의 **보호자 전용 모바일 앱** (Flutter). 기존 웹의 보호자 기능을 앱으로 이관.
+낙상감지 시스템의 **보호자 전용 모바일 앱**  기존 웹의 보호자 기능을 앱으로 이관.
 백엔드(Spring Boot)는 기존 서버를 그대로 사용한다.
 
 ## 기술 스택
 
-- Flutter 3.44 / Dart 3.12
+- Flutter/ Dart
 - dio (HTTP 통신), flutter_secure_storage (토큰 보관)
 - flutter_web_auth_2 (소셜 로그인), url_launcher (전화 걸기)
 
@@ -17,12 +17,12 @@ lib/
 ├── core/
 │   └── app_globals.dart     # 전역 navigatorKey
 ├── config/
-│   └── api_config.dart      # 서버 baseUrl (dart-define 주입)
+│   └── api_config.dart      # 서버 baseUrl 
 ├── models/                  # 서버 응답 데이터 모델
 │   ├── ward_summary.dart
 │   └── ward_sensor.dart
 ├── services/                # 통신·비즈니스 로직
-│   ├── api_client.dart      # 공용 dio 클라이언트 (토큰 자동 첨부, 401 처리)
+│   ├── api_client.dart      # 공용 dio 클라이언트 
 │   ├── token_storage.dart   # 토큰 저장/조회/삭제
 │   ├── auth_service.dart    # 소셜 로그인 / 로그아웃
 │   └── ward_service.dart    # 피보호자 등록·요약·센서 API
@@ -37,7 +37,6 @@ lib/
     └── input_formatters.dart  # 전화/생년월일/MAC 입력 자동 형식
 ```
 
-> 한 파일은 200줄 이내를 기준으로 관리한다.
 
 ## 실행 방법
 
@@ -57,12 +56,6 @@ flutter pub get
 flutter run -d chrome
 ```
 
-### 서버 주소 주입 (선택)
-```bash
-flutter run --dart-define=API_BASE_URL=https://api.example.com
-```
-미지정 시 기본값 `http://localhost:8080`.
-
 ## 백엔드 연동
 
 - 소셜 로그인(OAuth)은 백엔드가 처리 후 `cherrishbomb://login`으로 앱에 복귀 (state=app)
@@ -74,7 +67,7 @@ flutter run --dart-define=API_BASE_URL=https://api.example.com
 - [x] #2 API 통신 레이어
 - [x] #3 소셜 로그인(OAuth) + 로그아웃
 - [x] #4 피보호자 등록 화면
-- [~] #5 홈(보호자 모드) — 상태 요약·센서 (일부 mock, 백엔드 연동 대기)
+- [x] #5 홈(보호자 모드) — 상태 요약·센서 (일부 mock, 백엔드 연동 대기)
 - [ ] #6 비상 연락처 관리
 
 ## 알려진 제약

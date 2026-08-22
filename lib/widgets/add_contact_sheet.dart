@@ -20,9 +20,7 @@ class _AddContactSheetState extends State<AddContactSheet> {
   final _name = TextEditingController();
   final _phone = TextEditingController();
   String? _relationship;
-  static const _relationshipOptions = [
-    '자녀', '부모', '배우자', '형제자매', '친척', '담당 복지사', '기타',
-  ];
+  static const _relationshipOptions = ['자녀', '부모', '배우자', '형제자매', '친척', '담당 복지사', '기타'];
   bool _loading = false;
 
   bool get _isEdit => widget.existing != null;
@@ -60,20 +58,14 @@ class _AddContactSheetState extends State<AddContactSheet> {
           relationship: _relationship ?? '',
         );
       } else {
-        await WardService.addContact(
-          name: _name.text.trim(),
-          phone: phone,
-          relationship: _relationship ?? '',
-        );
+        await WardService.addContact(name: _name.text.trim(), phone: phone, relationship: _relationship ?? '');
       }
       if (!mounted) return;
       Navigator.pop(context, true); // 성공 → true 반환
     } catch (e) {
       debugPrint('연락처 저장 실패: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장에 실패했습니다. 다시 시도해주세요.')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -83,41 +75,28 @@ class _AddContactSheetState extends State<AddContactSheet> {
   Widget build(BuildContext context) {
     return Padding(
       // 키보드가 올라와도 폼이 가려지지 않게 하단 여백 확보
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
+      padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 20),
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              _isEdit ? '연락처 수정' : '연락처 추가',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text(_isEdit ? '연락처 수정' : '연락처 추가', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextFormField(
               controller: _name,
-              decoration: const InputDecoration(
-                labelText: '이름',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? '이름을 입력해주세요' : null,
+              decoration: const InputDecoration(labelText: '이름', border: OutlineInputBorder()),
+              validator: (v) => (v == null || v.trim().isEmpty) ? '이름을 입력해주세요' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _phone,
               keyboardType: TextInputType.number,
-              inputFormatters: [DashFormatter([3, 4, 4])],
-              decoration: const InputDecoration(
-                labelText: '전화번호 (010-XXXX-XXXX)',
-                border: OutlineInputBorder(),
-              ),
+              inputFormatters: [
+                DashFormatter([3, 4, 4]),
+              ],
+              decoration: const InputDecoration(labelText: '전화번호 (010-XXXX-XXXX)', border: OutlineInputBorder()),
               validator: (v) {
                 final s = (v ?? '').trim();
                 if (s.isEmpty) return '전화번호를 입력해주세요';
@@ -130,23 +109,15 @@ class _AddContactSheetState extends State<AddContactSheet> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _relationship,
-              decoration: const InputDecoration(
-                labelText: '관계',
-                border: OutlineInputBorder(),
-              ),
-              items: _relationshipOptions
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
+              decoration: const InputDecoration(labelText: '관계', border: OutlineInputBorder()),
+              items: _relationshipOptions.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
               onChanged: (v) => setState(() => _relationship = v),
               validator: (v) => v == null ? '관계를 선택해주세요' : null,
             ),
             const SizedBox(height: 20),
             _loading
                 ? const Center(child: CircularProgressIndicator())
-                : FilledButton(
-                    onPressed: _submit,
-                    child: Text(_isEdit ? '수정하기' : '추가하기'),
-                  ),
+                : FilledButton(onPressed: _submit, child: Text(_isEdit ? '수정하기' : '추가하기')),
           ],
         ),
       ),

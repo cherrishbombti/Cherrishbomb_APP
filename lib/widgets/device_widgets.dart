@@ -16,17 +16,13 @@ class DeviceOnlineCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.circle,
-                    size: 12, color: online ? Colors.green : Colors.grey),
+                Icon(Icons.circle, size: 12, color: online ? Colors.green : Colors.grey),
                 const SizedBox(width: 8),
-                Text(online ? '온라인' : '오프라인',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(online ? '온라인' : '오프라인', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 8),
-            Text('마지막 신호: $lastSeen',
-                style: const TextStyle(color: Colors.grey)),
+            Text('마지막 신호: $lastSeen', style: const TextStyle(color: Colors.grey)),
           ],
         ),
       ),
@@ -47,12 +43,9 @@ class DeviceStatBox extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(label,
-                style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
           ],
         ),
       ),
@@ -73,8 +66,7 @@ class DeviceInstallCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text('설치 위치',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('설치 위치', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(location, style: const TextStyle(color: Colors.grey)),
           ],
@@ -96,11 +88,9 @@ class DeviceHistoryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('기기 연결 이력',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('기기 연결 이력', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(height: 12),
-            Text('연결 이력은 추후 제공 예정입니다.',
-                style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Text('연결 이력은 추후 제공 예정입니다.', style: TextStyle(color: Colors.grey, fontSize: 13)),
           ],
         ),
       ),

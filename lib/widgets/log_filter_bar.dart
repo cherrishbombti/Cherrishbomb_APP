@@ -25,10 +25,7 @@ class LogFilterBar extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: _dateField('시작일', from, onPickFrom)),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('~'),
-          ),
+          const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('~')),
           Expanded(child: _dateField('종료일', to, onPickTo)),
           const SizedBox(width: 8),
           FilledButton(onPressed: onSearch, child: const Text('조회')),
@@ -38,9 +35,6 @@ class LogFilterBar extends StatelessWidget {
   }
 
   Widget _dateField(String label, DateTime? value, VoidCallback onTap) {
-    return OutlinedButton(
-      onPressed: onTap,
-      child: Text(value == null ? label : ymd(value)),
-    );
+    return OutlinedButton(onPressed: onTap, child: Text(value == null ? label : ymd(value)));
   }
 }
