@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // 전화 걸기
+
 import 'notifications_page.dart';
 import '../utils/phone_format.dart';
 import '../models/ward_summary.dart';
@@ -47,10 +48,7 @@ class _HomePageState extends State<HomePage> {
       _error = null;
     });
     try {
-      final results = await Future.wait([
-        WardService.getSummary(),
-        WardService.getSensors(),
-      ]);
+      final results = await Future.wait([WardService.getSummary(), WardService.getSensors()]);
       if (!mounted) return;
       setState(() {
         _summary = results[0] as WardSummary;
@@ -118,31 +116,16 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            '현재 안전 상태 요약',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          const Text('현재 안전 상태 요약', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          const Text(
-            '실시간으로 확인하는 어르신의 안전 상태입니다',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
-          ),
+          const Text('실시간으로 확인하는 어르신의 안전 상태입니다', style: TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(height: 16),
           // 오프라인이면 상태가 신뢰할 수 없다는 안내 배너
-          if (isOffline) ...[
-            _offlineBanner(),
-            const SizedBox(height: 12),
-          ],
+          if (isOffline) ...[_offlineBanner(), const SizedBox(height: 12)],
           // 오프라인이면 흐리게(반투명) 처리 — 현재 상태가 아님을 시각적으로 표현
           Opacity(
             opacity: isOffline ? 0.5 : 1.0,
-            child: Column(
-              children: [
-                _statusCard(s),
-                const SizedBox(height: 16),
-                _sensorCard(sensor),
-              ],
-            ),
+            child: Column(children: [_statusCard(s), const SizedBox(height: 16), _sensorCard(sensor)]),
           ),
         ],
       ),
@@ -163,10 +146,7 @@ class _HomePageState extends State<HomePage> {
           Icon(Icons.wifi_off, size: 18, color: Colors.grey),
           SizedBox(width: 8),
           Expanded(
-            child: Text(
-              '기기 미연결 — 아래는 마지막으로 수신된 상태입니다.',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
+            child: Text('기기 미연결 — 아래는 마지막으로 수신된 상태입니다.', style: TextStyle(fontSize: 13, color: Colors.grey)),
           ),
         ],
       ),
@@ -198,11 +178,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: color.shade700,
-                      ),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color.shade700),
                     ),
                     const SizedBox(height: 2),
                     Text('${s.relationship} (${s.wardName})'),
@@ -247,10 +223,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Text(
-                  '낙상 감지 센서',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                const Text('낙상 감지 센서', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(width: 8),
                 _connBadge(sensor.deviceOnline),
               ],
@@ -280,14 +253,8 @@ class _HomePageState extends State<HomePage> {
     final c = online ? Colors.green : Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: c.shade50,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        online ? '연결됨' : '연결 안 됨',
-        style: TextStyle(fontSize: 12, color: c.shade700),
-      ),
+      decoration: BoxDecoration(color: c.shade50, borderRadius: BorderRadius.circular(8)),
+      child: Text(online ? '연결됨' : '연결 안 됨', style: TextStyle(fontSize: 12, color: c.shade700)),
     );
   }
 
@@ -330,9 +297,7 @@ class _HomePageState extends State<HomePage> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('전화를 걸 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('전화를 걸 수 없습니다.')));
     }
   }
 }

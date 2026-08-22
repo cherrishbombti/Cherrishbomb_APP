@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // SystemNavigator
+
 import 'home_page.dart';
 import 'activity_log_page.dart';
 import 'device_page.dart';
@@ -37,8 +38,7 @@ class _MainShellState extends State<MainShell> {
   Widget _tabNavigator(int i) {
     return Navigator(
       key: _navKeys[i],
-      onGenerateRoute: (_) =>
-          MaterialPageRoute(builder: (_) => _rootFor(i)),
+      onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _rootFor(i)),
     );
   }
 
@@ -60,11 +60,7 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         body: IndexedStack(
           index: _index,
-          children: List.generate(
-            4,
-            (i) =>
-                _loaded.contains(i) ? _tabNavigator(i) : const SizedBox.shrink(),
-          ),
+          children: List.generate(4, (i) => _loaded.contains(i) ? _tabNavigator(i) : const SizedBox.shrink()),
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
@@ -80,11 +76,7 @@ class _MainShellState extends State<MainShell> {
             }
           },
           destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: '홈',
-            ),
+            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '홈'),
             NavigationDestination(
               icon: Icon(Icons.list_alt_outlined),
               selectedIcon: Icon(Icons.list_alt),
@@ -95,11 +87,7 @@ class _MainShellState extends State<MainShell> {
               selectedIcon: Icon(Icons.devices),
               label: '기기 관리',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: '설정',
-            ),
+            NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '설정'),
           ],
         ),
       ),

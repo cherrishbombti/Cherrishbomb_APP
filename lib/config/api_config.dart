@@ -9,8 +9,5 @@ class ApiConfig {
   //   - 실제 아이폰          : http://<맥 IP>:8080  (개발 시)
   //   - 안드로이드 에뮬레이터 : http://10.0.2.2:8080
   //   - 배포                : https://<서버 도메인>
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
-  );
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080');
 }

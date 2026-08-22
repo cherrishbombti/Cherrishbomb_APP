@@ -6,13 +6,7 @@ class WardHealth {
   final String? updatedByName; // 마지막 수정자
   final String? updatedAt; // 마지막 수정 시각(ISO)
 
-  WardHealth({
-    required this.disease,
-    required this.medication,
-    required this.memo,
-    this.updatedByName,
-    this.updatedAt,
-  });
+  WardHealth({required this.disease, required this.medication, required this.memo, this.updatedByName, this.updatedAt});
 
   factory WardHealth.fromJson(Map<String, dynamic> json) {
     return WardHealth(

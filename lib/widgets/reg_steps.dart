@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../utils/input_formatters.dart';
 import 'reg_text_field.dart';
 
@@ -47,7 +48,9 @@ class _RegStep1State extends State<RegStep1> {
             controller: widget.phone,
             label: '연락처 (010-XXXX-XXXX)',
             required: true,
-            inputFormatters: [DashFormatter([3, 4, 4])],
+            inputFormatters: [
+              DashFormatter([3, 4, 4]),
+            ],
             pattern: r'^010-\d{4}-\d{4}$',
             patternMsg: '전화번호 형식이 올바르지 않습니다.',
           ),
@@ -55,20 +58,13 @@ class _RegStep1State extends State<RegStep1> {
             padding: const EdgeInsets.only(bottom: 16),
             child: DropdownButtonFormField<String>(
               initialValue: _selected,
-              decoration: const InputDecoration(
-                  labelText: '피보호자와의 관계', border: OutlineInputBorder()),
-              items: _options
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
+              decoration: const InputDecoration(labelText: '피보호자와의 관계', border: OutlineInputBorder()),
+              items: _options.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
               onChanged: _onSelect,
               validator: (v) => v == null ? '관계를 선택해주세요' : null,
             ),
           ),
-          if (_selected == '기타')
-            RegTextField(
-                controller: widget.relationship,
-                label: '관계 직접 입력',
-                required: true),
+          if (_selected == '기타') RegTextField(controller: widget.relationship, label: '관계 직접 입력', required: true),
         ],
       ),
     );
@@ -106,7 +102,9 @@ class RegStep2 extends StatelessWidget {
             controller: phone,
             label: '연락처 (010-XXXX-XXXX)',
             required: true,
-            inputFormatters: [DashFormatter([3, 4, 4])],
+            inputFormatters: [
+              DashFormatter([3, 4, 4]),
+            ],
             pattern: r'^010-\d{4}-\d{4}$',
             patternMsg: '전화번호 형식이 올바르지 않습니다.',
           ),

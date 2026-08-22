@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/ward_health.dart';
 import '../utils/date_format.dart';
 
@@ -31,12 +32,8 @@ class HealthReadView extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: Icon(icon),
-        title: Text(label,
-            style: const TextStyle(fontSize: 13, color: Colors.grey)),
-        subtitle: Text(
-          empty ? '미입력' : value,
-          style: TextStyle(fontSize: 16, color: empty ? Colors.grey : null),
-        ),
+        title: Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        subtitle: Text(empty ? '미입력' : value, style: TextStyle(fontSize: 16, color: empty ? Colors.grey : null)),
       ),
     );
   }

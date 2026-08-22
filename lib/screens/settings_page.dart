@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../widgets/logout_button.dart';
 import 'contacts_page.dart';
 import 'health_page.dart';
@@ -10,10 +11,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('설정'),
-        actions: const [LogoutButton()],
-      ),
+      appBar: AppBar(title: const Text('설정'), actions: const [LogoutButton()]),
       body: ListView(
         children: [
           ListTile(
@@ -22,10 +20,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('연락처 조회 · 추가'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ContactsPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsPage()));
             },
           ),
           const Divider(height: 1),
@@ -35,10 +30,7 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('기저질환 · 복용약 · 병력'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HealthPage()),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthPage()));
             },
           ),
           const Divider(height: 1),
