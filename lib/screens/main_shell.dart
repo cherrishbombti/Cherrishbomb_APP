@@ -37,8 +37,7 @@ class _MainShellState extends State<MainShell> {
   Widget _tabNavigator(int i) {
     return Navigator(
       key: _navKeys[i],
-      onGenerateRoute: (_) =>
-          MaterialPageRoute(builder: (_) => _rootFor(i)),
+      onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _rootFor(i)),
     );
   }
 
@@ -60,11 +59,7 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         body: IndexedStack(
           index: _index,
-          children: List.generate(
-            4,
-            (i) =>
-                _loaded.contains(i) ? _tabNavigator(i) : const SizedBox.shrink(),
-          ),
+          children: List.generate(4, (i) => _loaded.contains(i) ? _tabNavigator(i) : const SizedBox.shrink()),
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
