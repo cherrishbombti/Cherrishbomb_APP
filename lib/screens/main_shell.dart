@@ -48,12 +48,7 @@ class _MainShellState extends State<MainShell> {
         body: IndexedStack(
           index: _index,
           // 방문 전 탭은 빈 위젯, 방문 후엔 실제 화면 (한 번 로드되면 유지)
-          children: List.generate(
-            4,
-            (i) => _loaded.contains(i)
-                ? _pageAt(i)
-                : const SizedBox.shrink(),
-          ),
+          children: List.generate(4, (i) => _loaded.contains(i) ? _pageAt(i) : const SizedBox.shrink()),
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _index,
@@ -62,11 +57,7 @@ class _MainShellState extends State<MainShell> {
             _loaded.add(i); // 처음 방문하는 탭이면 로드 목록에 추가
           }),
           destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: '홈',
-            ),
+            NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '홈'),
             NavigationDestination(
               icon: Icon(Icons.list_alt_outlined),
               selectedIcon: Icon(Icons.list_alt),
@@ -77,11 +68,7 @@ class _MainShellState extends State<MainShell> {
               selectedIcon: Icon(Icons.devices),
               label: '기기 관리',
             ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: '설정',
-            ),
+            NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '설정'),
           ],
         ),
       ),

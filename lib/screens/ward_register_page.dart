@@ -35,8 +35,14 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
   @override
   void dispose() {
     for (final c in [
-      _guardianName, _guardianPhone, _relationship,
-      _wardName, _address, _wardPhone, _disease, _deviceMac,
+      _guardianName,
+      _guardianPhone,
+      _relationship,
+      _wardName,
+      _address,
+      _wardPhone,
+      _disease,
+      _deviceMac,
     ]) {
       c.dispose();
     }
@@ -85,8 +91,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
     }
   }
 
-  void _snack(String m) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+  void _snack(String m) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
   @override
   Widget build(BuildContext context) {
@@ -97,37 +102,40 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('STEP ${_step + 1} / 2',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold)),
+            Text(
+              'STEP ${_step + 1} / 2',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            const Text('회원가입',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const Text(
+              '회원가입',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            const Text('보호자와 피보호자 정보를 입력해주세요',
-                textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            const Text(
+              '보호자와 피보호자 정보를 입력해주세요',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 16),
             _tabToggle(),
             const SizedBox(height: 20),
-            IndexedStack(index: _step, children: [
-              RegStep1(
-                formKey: _form1,
-                name: _guardianName,
-                phone: _guardianPhone,
-                relationship: _relationship,
-              ),
-              RegStep2(
-                formKey: _form2,
-                name: _wardName,
-                address: _address,
-                phone: _wardPhone,
-                disease: _disease,
-                deviceMac: _deviceMac,
-              ),
-            ]),
+            IndexedStack(
+              index: _step,
+              children: [
+                RegStep1(formKey: _form1, name: _guardianName, phone: _guardianPhone, relationship: _relationship),
+                RegStep2(
+                  formKey: _form2,
+                  name: _wardName,
+                  address: _address,
+                  phone: _wardPhone,
+                  disease: _disease,
+                  deviceMac: _deviceMac,
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             if (_loading) const Center(child: CircularProgressIndicator()) else _nav(),
           ],
@@ -166,9 +174,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton(
-              onPressed: () => setState(() => _step = 0),
-              child: const Text('이전')),
+          child: OutlinedButton(onPressed: () => setState(() => _step = 0), child: const Text('이전')),
         ),
         const SizedBox(width: 12),
         Expanded(

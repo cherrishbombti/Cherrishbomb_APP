@@ -66,14 +66,8 @@ class _ContactsPageState extends State<ContactsPage> {
         title: const Text('연락처 삭제'),
         content: Text('${c.name} 연락처를 삭제할까요?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('삭제')),
         ],
       ),
     );
@@ -88,9 +82,7 @@ class _ContactsPageState extends State<ContactsPage> {
     } catch (e) {
       debugPrint('연락처 삭제 실패: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('삭제에 실패했습니다.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('삭제에 실패했습니다.')));
     }
   }
 
@@ -100,9 +92,7 @@ class _ContactsPageState extends State<ContactsPage> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('전화를 걸 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('전화를 걸 수 없습니다.')));
     }
   }
 
@@ -157,9 +147,7 @@ class _ContactsPageState extends State<ContactsPage> {
   Widget _contactCard(WardContact c) {
     return Card(
       child: ListTile(
-        leading: CircleAvatar(
-          child: Text(c.name.isNotEmpty ? c.name[0] : '?'),
-        ),
+        leading: CircleAvatar(child: Text(c.name.isNotEmpty ? c.name[0] : '?')),
         title: Text('${c.name} (${c.relationship})'),
         // 전화번호는 표시할 때만 하이픈, 우선순위는 서버값(C6)
         subtitle: Text('${formatPhone(c.phone)}\n우선순위 ${c.priority}'),

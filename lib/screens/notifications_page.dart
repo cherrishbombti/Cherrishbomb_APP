@@ -76,9 +76,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('알림함'),
-        actions: [
-          TextButton(onPressed: _readAll, child: const Text('전체 읽음')),
-        ],
+        actions: [TextButton(onPressed: _readAll, child: const Text('전체 읽음'))],
       ),
       body: _buildBody(),
     );
@@ -111,8 +109,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: items.length + 1, // 마지막 칸은 페이지네이션
-        itemBuilder: (_, i) =>
-            i < items.length ? _card(items[i]) : _pagination(),
+        itemBuilder: (_, i) => i < items.length ? _card(items[i]) : _pagination(),
       ),
     );
   }
@@ -126,15 +123,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: d.page > 0 ? () => _goPage(d.page - 1) : null,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_left), onPressed: d.page > 0 ? () => _goPage(d.page - 1) : null),
           Text('${d.page + 1} / ${d.totalPages}'),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: !d.last ? () => _goPage(d.page + 1) : null,
-          ),
+          IconButton(icon: const Icon(Icons.chevron_right), onPressed: !d.last ? () => _goPage(d.page + 1) : null),
         ],
       ),
     );
@@ -148,16 +139,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: ListTile(
         onTap: () => _tap(n),
         leading: Icon(Icons.circle, size: 14, color: color),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold,
-          ),
-        ),
+        title: Text(label, style: TextStyle(fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold)),
         subtitle: Text('${n.memberName} · ${_time(n.createdAt)}'),
-        trailing: n.isRead
-            ? null
-            : const Icon(Icons.circle, size: 8, color: Colors.red),
+        trailing: n.isRead ? null : const Icon(Icons.circle, size: 8, color: Colors.red),
       ),
     );
   }

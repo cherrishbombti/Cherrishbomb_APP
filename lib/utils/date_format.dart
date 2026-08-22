@@ -7,5 +7,4 @@ String pad2(int n) => n.toString().padLeft(2, '0');
 String ymd(DateTime d) => '${d.year}-${pad2(d.month)}-${pad2(d.day)}';
 
 /// 'MM-DD HH:mm' (로그 발생 시각 표시용)
-String mdHm(DateTime d) =>
-    '${pad2(d.month)}-${pad2(d.day)} ${pad2(d.hour)}:${pad2(d.minute)}';
+String mdHm(DateTime d) => '${pad2(d.month)}-${pad2(d.day)} ${pad2(d.hour)}:${pad2(d.minute)}';

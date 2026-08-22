@@ -28,15 +28,11 @@ class _LoginPageState extends State<LoginPage> {
       // 사용자가 로그인 창을 그냥 닫음(취소) → 에러 아님, 조용히 넘김
       if (e.code == 'CANCELED') return;
       // 그 외 플랫폼 오류만 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로그인 실패: ${e.message ?? e.code}')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인 실패: ${e.message ?? e.code}')));
     } catch (e) {
       if (!mounted) return;
       // 그 밖의 오류 표시
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('로그인 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인 실패: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -70,15 +66,9 @@ class _LoginPageState extends State<LoginPage> {
               if (_loading)
                 const Center(child: CircularProgressIndicator())
               else ...[
-                FilledButton(
-                  onPressed: () => _handleLogin('kakao'),
-                  child: const Text('카카오로 로그인'),
-                ),
+                FilledButton(onPressed: () => _handleLogin('kakao'), child: const Text('카카오로 로그인')),
                 const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: () => _handleLogin('google'),
-                  child: const Text('구글로 로그인'),
-                ),
+                OutlinedButton(onPressed: () => _handleLogin('google'), child: const Text('구글로 로그인')),
               ],
             ],
           ),
