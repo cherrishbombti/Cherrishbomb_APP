@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_notification.dart';
+import '../services/notification_store.dart';
 import '../services/ward_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_format.dart';
@@ -37,8 +38,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
       _error = null;
     });
     try {
+      final gen = NotificationStore.generation; // 조회 시작 시점의 세션 세대
       final data = await WardService.getNotifications(page: _pageNum);
-      if (!mounted) return;
+      if (!mounted) return; // dispose(로그아웃 등) 뒤면 전역 상태를 건드리지 않음
+      NotificationStore.set(data.unreadCount, gen: gen); // 지난 세션 응답이면 무시됨
       setState(() {
         _data = data;
         _loading = false;

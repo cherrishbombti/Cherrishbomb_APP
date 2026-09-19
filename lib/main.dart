@@ -16,6 +16,7 @@ class CherrishbombApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '낙상감지 핫 라인 시스템',
+      debugShowCheckedModeBanner: false, // 우측 상단 DEBUG 리본 숨김
       theme: AppTheme.light,
       // 날짜 선택기 등 Material 기본 UI를 한국어로
       localizationsDelegates: const [

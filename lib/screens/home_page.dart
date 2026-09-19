@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // 전화 걸기
 import '../utils/phone_format.dart';
 import '../models/ward_summary.dart';
 import '../models/ward_sensor.dart';
+import '../services/notification_store.dart';
 import '../services/ward_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_format.dart';
@@ -17,26 +20,88 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _loading = true; // 데이터 불러오는 중
   String? _error; // 에러 메시지 (없으면 null)
   WardSummary? _summary;
   WardSensor? _sensor;
 
+  Timer? _poll; // 자동 새로고침 타이머
+  bool _paused = false; // 앱이 백그라운드면 true → 폴링 스케줄 금지
+
   @override
   void initState() {
     super.initState();
-    _load(); // 화면 뜨자마자 데이터 불러오기
+    WidgetsBinding.instance.addObserver(this); // 앱 포그라운드/백그라운드 감지
+    _load().then((_) => _schedulePoll()); // 첫 로드 후 자동 새로고침 시작
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // 앱이 백그라운드면 폴링 중지(배터리·네트워크 절약), 돌아오면 즉시 갱신 후 재개.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _paused = false;
+      _tick(); // 즉시 한 번 갱신하고, 끝나면 스케줄 재개
+    } else {
+      _paused = true;
+      _poll?.cancel();
+    }
+  }
+
+  // 상태에 따라 새로고침 간격을 정한다.
+  // 낙상을 빨리 잡아야 하므로 평소(SAFE)에도 짧게, 주의·위험이면 더 자주.
+  Duration get _pollInterval {
+    final st = _summary?.status;
+    return (st == 'DANGER' || st == 'WARNING') ? const Duration(seconds: 2) : const Duration(seconds: 5);
+  }
+
+  // 스케줄 함수 자체에서 lifecycle을 확인한다.
+  // 백그라운드로 간 뒤 진행 중이던 _tick·_load가 뒤늦게 호출해도 새 타이머가 안 생긴다.
+  void _schedulePoll() {
+    _poll?.cancel();
+    if (_paused || !mounted) return;
+    _poll = Timer(_pollInterval, _tick);
+  }
+
+  Future<void> _tick() async {
+    await _silentRefresh();
+    _schedulePoll(); // 매번 현재 상태 기준으로 다음 간격 재설정 (paused면 내부에서 중단)
+  }
+
+  // 스피너 없이 조용히 최신값만 반영. 실패해도 기존 화면 유지.
+  Future<void> _silentRefresh() async {
+    try {
+      final results = await Future.wait([WardService.getSummary(force: true), WardService.getSensors(force: true)]);
+      if (!mounted) return;
+      setState(() {
+        _summary = results[0] as WardSummary;
+        _sensor = results[1] as WardSensor;
+      });
+    } catch (_) {
+      // 요약/센서 실패는 조용히 무시 (다음 주기에 재시도)
+    } finally {
+      // 홈 요약/센서 실패와 무관하게 안읽음 배지는 갱신한다.
+      // await 해서 미완료 갱신이 다음 폴링과 겹치지 않게 한다.
+      await NotificationStore.refresh();
+    }
   }
 
   // 요약 + 센서 데이터를 서버에서 불러온다. (두 요청은 독립적이라 병렬 호출)
-  Future<void> _load() async {
+  // force=true 는 캐시를 건너뛰고 서버에서 새로 받는다. (당겨서 새로고침)
+  Future<void> _load({bool force = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final results = await Future.wait([WardService.getSummary(), WardService.getSensors()]);
+      final results = await Future.wait([WardService.getSummary(force: force), WardService.getSensors(force: force)]);
       if (!mounted) return;
       setState(() {
         _summary = results[0] as WardSummary;
@@ -80,7 +145,7 @@ class _HomePageState extends State<HomePage> {
     // 기기가 오프라인이면 지금 상태는 '마지막 수신값'이라 현재 상태가 아님(stale)
     final isOffline = !s.deviceOnline;
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(force: true),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -98,10 +163,6 @@ class _HomePageState extends State<HomePage> {
                 _statusCard(s),
                 const SizedBox(height: 16),
                 EmergencyCallCard(onCall: () => _callPhone('119')),
-                const SizedBox(height: 16),
-                ActivityStatsRow(totalMinutes: s.totalActivityMinutes, lastMinutes: s.lastActivityMinutes),
-                const SizedBox(height: 16),
-                const ActivityTimeline(),
                 const SizedBox(height: 16),
                 _sensorCard(sensor),
               ],

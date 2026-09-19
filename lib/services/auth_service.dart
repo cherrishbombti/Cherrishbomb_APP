@@ -2,6 +2,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 import '../config/api_config.dart';
 import 'api_client.dart';
+import 'session.dart';
 import 'token_storage.dart';
 
 /// 로그인 결과. isNewUser: 아직 피보호자 등록 안 한 신규 사용자인지.
@@ -48,6 +49,7 @@ class AuthService {
     } catch (_) {
       // 네트워크 실패 등은 무시 — 로컬 정리가 우선
     }
-    await TokenStorage.clear();
+    // 토큰·캐시·알림 배지까지 한 번에 정리 (401 만료 경로와 동일 루틴)
+    await Session.clear();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../config/api_config.dart';
+import 'session.dart';
 import 'token_storage.dart';
 import '../core/app_router.dart'; // appRouter
 
@@ -62,9 +63,11 @@ class ApiClient {
               }
             }
             // 재발급 실패 → 세션 만료 처리 (한 번만)
+            // 토큰뿐 아니라 캐시·알림 배지까지 정리해, 다음 로그인에서
+            // 이전 사용자의 상태가 남아있지 않게 한다. (로그아웃과 동일 루틴)
             if (!_redirecting) {
               _redirecting = true;
-              await TokenStorage.clear();
+              await Session.clear();
               appRouter.go('/login');
             }
           }

@@ -28,13 +28,13 @@ class _ContactsPageState extends State<ContactsPage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final contacts = await WardService.getContacts();
+      final contacts = await WardService.getContacts(force: force);
       if (!mounted) return;
       setState(() {
         _contacts = contacts;
@@ -138,7 +138,7 @@ class _ContactsPageState extends State<ContactsPage> {
       );
     }
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(force: true),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _contacts.length,

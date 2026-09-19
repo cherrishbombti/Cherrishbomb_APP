@@ -28,13 +28,13 @@ class _DevicePageState extends State<DevicePage> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final s = await WardService.getSensors();
+      final s = await WardService.getSensors(force: force);
       if (!mounted) return;
       setState(() {
         _sensor = s;
@@ -73,7 +73,7 @@ class _DevicePageState extends State<DevicePage> {
     }
     final s = _sensor!;
     return RefreshIndicator(
-      onRefresh: _load,
+      onRefresh: () => _load(force: true),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [

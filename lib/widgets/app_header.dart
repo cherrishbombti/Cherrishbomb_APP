@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../screens/notifications_page.dart';
-import '../services/ward_service.dart';
+import '../services/notification_store.dart';
 import '../theme/app_colors.dart';
 
-/// 메인 탭 공통 상단 헤더. 와이어프레임의 "보호자 모드 + 벨(배지) + 아바타".
+/// 메인 탭 공통 상단 헤더. 와이어프레임의 "보호자 모드 + 벨(배지)".
 /// 탭마다 동일하게 얹어 고정된 것처럼 보이게 한다.
-/// 미읽음 개수는 헤더가 스스로 조회해 어느 탭에서든 배지가 뜬다.
+/// 미읽음 개수는 NotificationStore(전역)에서 구독한다.
+/// - 어느 탭에서 읽어도 모든 탭 배지가 동시에 갱신된다.
+/// - 서버 조회는 최초 1회(ensureLoaded)뿐이라, 탭을 옮겨도 알림 API를 반복 호출하지 않는다.
 class AppHeader extends StatefulWidget implements PreferredSizeWidget {
   const AppHeader({super.key});
 
@@ -17,21 +19,11 @@ class AppHeader extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _AppHeaderState extends State<AppHeader> {
-  int _unread = 0;
-
   @override
   void initState() {
     super.initState();
-    _loadUnread();
-  }
-
-  Future<void> _loadUnread() async {
-    try {
-      final n = await WardService.getNotifications(size: 1);
-      if (mounted) setState(() => _unread = n.unreadCount);
-    } catch (_) {
-      // 배지는 부가 정보라 실패 시 조용히 무시
-    }
+    // 최초 1회만 실제 조회. 이미 로드됐으면 캐시된 값을 그대로 쓴다.
+    NotificationStore.ensureLoaded();
   }
 
   @override
@@ -43,15 +35,16 @@ class _AppHeaderState extends State<AppHeader> {
       actions: [
         IconButton(
           tooltip: '알림함',
-          icon: Badge(
-            isLabelVisible: _unread > 0,
-            label: Text('$_unread'),
+          icon: ValueListenableBuilder<int>(
+            valueListenable: NotificationStore.unread,
+            builder: (_, unread, child) => Badge(isLabelVisible: unread > 0, label: Text('$unread'), child: child),
             child: const Icon(Icons.notifications_none),
           ),
+          // 알림함에서 읽고 돌아오면 배지를 최신화
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const NotificationsPage()),
-          ).then((_) => _loadUnread()),
+          ).then((_) => NotificationStore.refresh()),
         ),
         const SizedBox(width: 4),
       ],
