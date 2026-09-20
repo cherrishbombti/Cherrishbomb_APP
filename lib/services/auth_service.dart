@@ -52,4 +52,12 @@ class AuthService {
     // 토큰·캐시·알림 배지까지 한 번에 정리 (401 만료 경로와 동일 루틴)
     await Session.clear();
   }
+
+  /// 회원탈퇴. 서버에서 계정·연결 데이터(피보호자·연락처·건강·알림·기기토큰)를 삭제한 뒤
+  /// 로컬 세션을 정리한다. 되돌릴 수 없다.
+  static Future<void> withdraw() async {
+    // 서버 삭제가 성공해야 로컬을 정리한다 (실패 시 예외를 그대로 올림)
+    await ApiClient.dio.delete('/api/wards/me/account');
+    await Session.clear();
+  }
 }
