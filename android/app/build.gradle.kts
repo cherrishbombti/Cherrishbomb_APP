@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications(푸시 foreground 표시)가 요구하는 설정
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -42,4 +44,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // isCoreLibraryDesugaringEnabled 와 짝. flutter_local_notifications 18.x 권장 버전
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
