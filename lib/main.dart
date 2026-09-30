@@ -1,10 +1,25 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_router.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
-// 앱의 시작점. 여기서 앱 전체를 실행한다.
-void main() {
+/// 백그라운드(앱 종료·최소화)에서 푸시가 올 때 실행되는 최상위 핸들러.
+/// 알림 배너 표시는 OS가 처리하므로 여기선 초기화만 보장한다.
+@pragma('vm:entry-point')
+Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+// 앱의 시작점. Firebase·알림 초기화 후 앱을 실행한다.
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // iOS는 GoogleService-Info.plist, Android는 google-services.json 을 자동으로 읽어 초기화된다.
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+  await NotificationService.init();
   runApp(const CherrishbombApp());
 }
 

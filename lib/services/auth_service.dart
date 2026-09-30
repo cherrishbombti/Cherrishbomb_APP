@@ -2,6 +2,7 @@ import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
 import '../config/api_config.dart';
 import 'api_client.dart';
+import 'notification_service.dart';
 import 'session.dart';
 import 'token_storage.dart';
 
@@ -38,11 +39,16 @@ class AuthService {
     // 3) 액세스 + 리프레시 토큰을 보안 저장소에 저장한다.
     await TokenStorage.saveTokens(accessToken: token, refreshToken: refreshToken);
 
+    // 4) 이 기기의 FCM 토큰을 백엔드에 등록 (실패해도 로그인은 진행)
+    await NotificationService.registerToken();
+
     return AuthResult(isNewUser);
   }
 
   /// 로그아웃. 서버에 폐기 요청 후 로컬 토큰 삭제.
   static Future<void> logout() async {
+    // 이 기기 FCM 토큰을 서버에서 제거 (토큰 삭제 전에 = 인증 헤더 살아있을 때)
+    await NotificationService.unregisterToken();
     try {
       // 서버의 리프레시 토큰도 폐기 (실패해도 로컬은 반드시 정리)
       await ApiClient.dio.post('/api/auth/logout');

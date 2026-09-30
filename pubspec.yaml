@@ -44,6 +44,11 @@ dependencies:
   go_router: ^17.5.0
   # 카카오·구글 공식 로고(SVG) 표시용
   flutter_svg: ^2.0.17
+  # FCM 푸시 알림
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+  # 앱이 켜져 있을 때(foreground) 알림을 화면에 직접 띄우기 위함
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:

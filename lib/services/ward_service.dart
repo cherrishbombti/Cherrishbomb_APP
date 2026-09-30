@@ -249,6 +249,18 @@ class WardService {
     _orgC.clear();
   }
 
+  /// FCM 디바이스 토큰 등록/갱신. POST /api/push/token {token, platform}
+  /// 로그인 후 · 토큰 갱신 시 호출. 서버는 같은 토큰이면 소유자만 갱신(upsert).
+  static Future<void> registerFcmToken(String token) async {
+    await ApiClient.dio.post('/api/push/token', data: {'token': token, 'platform': 'IOS'});
+  }
+
+  /// FCM 디바이스 토큰 삭제. DELETE /api/push/token {token}
+  /// 로그아웃 시 호출해 이 기기로 더는 푸시가 가지 않게 한다.
+  static Future<void> deleteFcmToken(String token) async {
+    await ApiClient.dio.delete('/api/push/token', data: {'token': token});
+  }
+
   // 목 에러: 실제 서버 에러(DioException + {code,message})와 같은 형태로 던짐.
   static DioException _mockError(int status, String code, String message) {
     final opts = RequestOptions(path: '/api/wards/me/organization');
