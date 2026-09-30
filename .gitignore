@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase 설정 파일 — 커밋 금지 (CI "자격증명 커밋 여부 확인" 규칙)
+# 각자 Firebase 콘솔에서 내려받아 로컬에만 둔다.
+**/GoogleService-Info.plist
+**/google-services.json

@@ -17,9 +17,14 @@ Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // iOS는 GoogleService-Info.plist, Android는 google-services.json 을 자동으로 읽어 초기화된다.
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
-  await NotificationService.init();
+  // 설정 파일이 없는 환경(아직 Firebase 미연동인 Android 등)에서는 푸시만 끄고 앱은 정상 실행한다.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+    await NotificationService.init();
+  } catch (e) {
+    debugPrint('Firebase 초기화 실패 — 푸시 비활성: $e');
+  }
   runApp(const CherrishbombApp());
 }
 
