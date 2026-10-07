@@ -37,7 +37,8 @@ class NotificationService {
 
     // 2) 로컬 알림 플러그인 초기화 (foreground 표시용)
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      // 상태바 알림 아이콘은 흰색 실루엣이어야 해서 앱 아이콘 대신 전용 아이콘 사용
+      android: AndroidInitializationSettings('@drawable/ic_stat_notify'),
       iOS: DarwinInitializationSettings(),
     );
     await _local.initialize(initSettings);
