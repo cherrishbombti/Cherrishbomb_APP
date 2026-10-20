@@ -1,4 +1,5 @@
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../config/api_config.dart';
 import 'api_client.dart';
@@ -43,6 +44,36 @@ class AuthService {
     await NotificationService.registerToken();
 
     return AuthResult(isNewUser);
+  }
+
+  /// Apple 로그인 (iOS 전용, App Store 가이드라인 4.8).
+  /// 아이폰 기본 Apple 로그인 창 → 받은 identityToken 을 백엔드가 검증 → 우리 토큰 발급.
+  /// 사용자가 창을 닫으면 SignInWithAppleAuthorizationException(canceled) 이 그대로 올라간다.
+  static Future<AuthResult> loginWithApple() async {
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+    );
+
+    // 이름은 "처음 로그인할 때만" 온다. 한국식으로 성+이름.
+    final name = '${credential.familyName ?? ''}${credential.givenName ?? ''}'.trim();
+
+    final res = await ApiClient.dio.post(
+      '/api/auth/apple',
+      data: {
+        'identityToken': credential.identityToken,
+        'authorizationCode': credential.authorizationCode,
+        if (name.isNotEmpty) 'name': name,
+      },
+    );
+
+    final data = res.data as Map;
+    final token = data['token'] as String?;
+    if (token == null) {
+      throw Exception('로그인 응답에 토큰이 없습니다.');
+    }
+    await TokenStorage.saveTokens(accessToken: token, refreshToken: data['refreshToken'] as String?);
+    await NotificationService.registerToken();
+    return AuthResult(data['isNewUser'] == true);
   }
 
   /// 로그아웃. 서버에 폐기 요청 후 로컬 토큰 삭제.

@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart'; // defaultTargetPlatform
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // PlatformException 사용
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import '../config/legal_links.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 
@@ -17,11 +20,14 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _loading = false; // 로그인 진행 중이면 true
 
-  // 소셜 로그인 버튼을 눌렀을 때 실행.
+  // Apple 로그인 버튼은 아이폰에서만 보인다 (안드로이드는 카카오·구글만).
+  bool get _showApple => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  // 소셜 로그인 버튼을 눌렀을 때 실행. provider: 'kakao' | 'google' | 'apple'
   Future<void> _handleLogin(String provider) async {
     setState(() => _loading = true);
     try {
-      final result = await AuthService.login(provider);
+      final result = provider == 'apple' ? await AuthService.loginWithApple() : await AuthService.login(provider);
       if (!mounted) return; // 화면이 이미 사라졌으면 중단
       // 신규 사용자면 피보호자 등록 화면, 기존이면 홈으로.
       context.go(result.isNewUser ? '/register' : '/home');
@@ -30,6 +36,11 @@ class _LoginPageState extends State<LoginPage> {
       // 사용자가 로그인 창을 그냥 닫음(취소) → 에러 아님, 조용히 넘김
       if (e.code == 'CANCELED') return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인 실패: ${e.message ?? e.code}')));
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (!mounted) return;
+      // Apple 로그인 창을 닫음(취소) → 조용히 넘김
+      if (e.code == AuthorizationErrorCode.canceled) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Apple 로그인 실패: ${e.message}')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('로그인 실패: $e')));
@@ -70,14 +81,33 @@ class _LoginPageState extends State<LoginPage> {
               if (_loading)
                 const Center(child: CircularProgressIndicator())
               else ...[
+                if (_showApple) ...[_appleButton(), const SizedBox(height: 12)],
                 _kakaoButton(),
                 const SizedBox(height: 12),
                 _googleButton(),
               ],
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () => LegalLinks.open(LegalLinks.privacyPolicy),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+                  child: const Text('개인정보 처리방침', style: TextStyle(fontSize: 13, decoration: TextDecoration.underline)),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // Apple: Apple 이 제공하는 공식 버튼 (디자인 가이드 준수)
+  Widget _appleButton() {
+    return SignInWithAppleButton(
+      onPressed: () => _handleLogin('apple'),
+      text: 'Apple로 로그인',
+      height: 52,
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
     );
   }
 
