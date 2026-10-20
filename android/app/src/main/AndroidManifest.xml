@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 서버 통신. (디버그 빌드엔 자동으로 들어가지만 릴리스 빌드엔 명시해야 함) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ 푸시 알림 표시 권한 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- 서버가 HTTPS 로 바뀌어 평문(HTTP) 허용 설정(usesCleartextTraffic)은 제거함 -->
     <application
-        android:label="cherrishbomb_app"
+        android:label="낙상감지 핫라인"
         android:name="${applicationName}"
-        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -37,6 +42,18 @@
                 <data android:scheme="cherrishbomb" />
             </intent-filter>
         </activity>
+
+        <!-- 앱이 꺼져 있을 때 FCM 이 직접 띄우는 알림의 기본값.
+             (상태바 아이콘 / 강조색 / 알림 채널 — 채널은 NotificationService 가 앱 시작 시 생성) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/ic_launcher_background" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="cherrishbomb_alerts" />
 
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
