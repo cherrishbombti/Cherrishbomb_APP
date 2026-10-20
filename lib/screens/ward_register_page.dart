@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 
+import '../config/legal_links.dart';
 import '../services/auth_service.dart';
 import '../services/ward_service.dart';
 import '../theme/app_colors.dart';
@@ -34,6 +35,11 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
 
   bool _loading = false;
 
+  // 가입 동의 (개인정보 보호법: 필수/선택·민감정보 별도 동의)
+  bool _agreePrivacy = false; // [필수] 개인정보 수집·이용
+  bool _agreeWardConsent = false; // [필수] 피보호자·비상연락처 본인 동의 받음 확인
+  bool _agreeHealth = false; // [선택] 건강정보(민감정보) 수집·이용
+
   @override
   void dispose() {
     for (final c in [
@@ -61,6 +67,16 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
       setState(() => _step = 0);
       return;
     }
+    if (!_agreePrivacy || !_agreeWardConsent) {
+      _snack('필수 동의 항목에 체크해주세요.');
+      return;
+    }
+    // 건강정보는 민감정보 — 동의하지 않았으면 보내지 않는다
+    final disease = _agreeHealth ? _disease.text.trim() : '';
+    if (!_agreeHealth && _disease.text.trim().isNotEmpty) {
+      _snack('기저질환을 입력하려면 건강정보 수집·이용에 동의해주세요.');
+      return;
+    }
     setState(() => _loading = true);
     try {
       await WardService.registerWard(
@@ -72,7 +88,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
         deviceMac: _deviceMac.text.trim().toUpperCase(),
         guardianName: _guardianName.text.trim(),
         guardianPhone: _guardianPhone.text.trim(),
-        disease: _disease.text.trim(),
+        disease: disease,
       );
       if (!mounted) return;
       _snack('회원가입이 완료되었습니다.');
@@ -157,12 +173,61 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
                   ),
                 ],
               ),
+              if (_step == 1) ...[const SizedBox(height: 8), _consents()],
               const SizedBox(height: 12),
               if (_loading) const Center(child: CircularProgressIndicator()) else _nav(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 가입 동의 체크박스 묶음 (STEP2 하단)
+  Widget _consents() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          _consentTile(
+            value: _agreePrivacy,
+            onChanged: (v) => setState(() => _agreePrivacy = v),
+            label: '[필수] 개인정보 수집·이용 및 국외 이전(서버·푸시) 동의',
+          ),
+          _consentTile(
+            value: _agreeWardConsent,
+            onChanged: (v) => setState(() => _agreeWardConsent = v),
+            label: '[필수] 피보호자·비상 연락처 본인(또는 법정대리인)의 동의를 받았습니다',
+          ),
+          _consentTile(
+            value: _agreeHealth,
+            onChanged: (v) => setState(() => _agreeHealth = v),
+            label: '[선택] 건강정보(민감정보) 수집·이용 동의 — 기저질환·복용약 입력 시 필요',
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => LegalLinks.open(LegalLinks.privacyPolicy),
+              child: const Text('개인정보 처리방침 전문 보기', style: TextStyle(fontSize: 13)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _consentTile({required bool value, required ValueChanged<bool> onChanged, required String label}) {
+    return CheckboxListTile(
+      value: value,
+      onChanged: (v) => onChanged(v ?? false),
+      title: Text(label, style: const TextStyle(fontSize: 13)),
+      controlAffinity: ListTileControlAffinity.leading,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 

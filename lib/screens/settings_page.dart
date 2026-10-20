@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../config/legal_links.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_header.dart';
@@ -45,6 +46,20 @@ class SettingsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const OrganizationPage()));
             },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('개인정보 처리방침'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => LegalLinks.open(LegalLinks.privacyPolicy),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.help_outline),
+            title: const Text('고객 지원 · 문의'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => LegalLinks.open(LegalLinks.support),
           ),
           const Divider(height: 1),
           ListTile(
