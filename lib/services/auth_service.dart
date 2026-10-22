@@ -39,6 +39,7 @@ class AuthService {
 
     // 3) 액세스 + 리프레시 토큰을 보안 저장소에 저장한다.
     await TokenStorage.saveTokens(accessToken: token, refreshToken: refreshToken);
+    await TokenStorage.saveLoginProvider(provider);
 
     // 4) 이 기기의 FCM 토큰을 백엔드에 등록 (실패해도 로그인은 진행)
     await NotificationService.registerToken();
@@ -72,6 +73,7 @@ class AuthService {
       throw Exception('로그인 응답에 토큰이 없습니다.');
     }
     await TokenStorage.saveTokens(accessToken: token, refreshToken: data['refreshToken'] as String?);
+    await TokenStorage.saveLoginProvider('apple');
     await NotificationService.registerToken();
     return AuthResult(data['isNewUser'] == true);
   }

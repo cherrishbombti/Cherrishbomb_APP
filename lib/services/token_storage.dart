@@ -5,6 +5,7 @@ class TokenStorage {
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'accessToken';
   static const _refreshKey = 'refreshToken';
+  static const _providerKey = 'loginProvider';
 
   // 토큰 저장 (로그인 성공 시)
   static Future<void> saveToken(String token) async {
@@ -31,9 +32,15 @@ class TokenStorage {
 
   static Future<String?> getRefreshToken() => _storage.read(key: _refreshKey);
 
+  // 마지막 로그인 방식 ('kakao' | 'google' | 'apple')
+  // Apple 로그인은 이름·이메일을 이미 받으므로 가입 화면에서 다시 묻지 않는 데 쓴다.
+  static Future<void> saveLoginProvider(String provider) => _storage.write(key: _providerKey, value: provider);
+  static Future<String?> getLoginProvider() => _storage.read(key: _providerKey);
+
   // 로그아웃 시 전부 삭제
   static Future<void> clear() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _refreshKey);
+    await _storage.delete(key: _providerKey);
   }
 }

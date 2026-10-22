@@ -5,17 +5,20 @@ import 'reg_text_field.dart';
 
 /// STEP1 — 보호자 정보 (이름·연락처·관계).
 /// 관계는 드롭다운, '기타' 선택 시 직접 입력 필드가 나타난다.
+/// showName=false (Apple 로그인): 이름은 Apple 에서 이미 받았으므로 묻지 않는다 (App Store 가이드라인 4).
 class RegStep1 extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController name;
   final TextEditingController phone;
   final TextEditingController relationship; // 최종 관계 값
+  final bool showName;
   const RegStep1({
     super.key,
     required this.formKey,
     required this.name,
     required this.phone,
     required this.relationship,
+    this.showName = true,
   });
 
   @override
@@ -43,7 +46,17 @@ class _RegStep1State extends State<RegStep1> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RegTextField(controller: widget.name, label: '이름', required: true),
+          if (widget.showName)
+            RegTextField(controller: widget.name, label: '이름', required: true)
+          else
+            const Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: Text(
+                'Apple 계정으로 로그인했어요. 이름·이메일은 다시 입력하지 않아도 돼요.\n'
+                '위급 상황 알림을 받을 연락처와 관계만 입력해 주세요.',
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+            ),
           RegTextField(
             controller: widget.phone,
             label: '연락처 (010-XXXX-XXXX)',
