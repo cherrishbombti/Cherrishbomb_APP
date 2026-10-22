@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../config/legal_links.dart';
 import '../services/auth_service.dart';
+import '../services/token_storage.dart';
 import '../services/ward_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/reg_steps.dart';
@@ -34,6 +35,17 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
   final _deviceMac = TextEditingController();
 
   bool _loading = false;
+
+  // Apple 로그인이면 보호자 이름을 묻지 않는다 (Apple 이 이미 제공)
+  bool _isApple = false;
+
+  @override
+  void initState() {
+    super.initState();
+    TokenStorage.getLoginProvider().then((p) {
+      if (mounted && p == 'apple') setState(() => _isApple = true);
+    });
+  }
 
   // 가입 동의 (개인정보 보호법: 필수/선택·민감정보 별도 동의)
   bool _agreePrivacy = false; // [필수] 개인정보 수집·이용
@@ -86,7 +98,7 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
         phone: _wardPhone.text.trim(),
         relationship: _relationship.text.trim(),
         deviceMac: _deviceMac.text.trim().toUpperCase(),
-        guardianName: _guardianName.text.trim(),
+        guardianName: _isApple ? null : _guardianName.text.trim(),
         guardianPhone: _guardianPhone.text.trim(),
         disease: disease,
       );
@@ -162,7 +174,13 @@ class _WardRegisterPageState extends State<WardRegisterPage> {
               IndexedStack(
                 index: _step,
                 children: [
-                  RegStep1(formKey: _form1, name: _guardianName, phone: _guardianPhone, relationship: _relationship),
+                  RegStep1(
+                    formKey: _form1,
+                    name: _guardianName,
+                    phone: _guardianPhone,
+                    relationship: _relationship,
+                    showName: !_isApple,
+                  ),
                   RegStep2(
                     formKey: _form2,
                     name: _wardName,
