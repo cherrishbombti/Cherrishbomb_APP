@@ -78,6 +78,17 @@ class SettingsPage extends StatelessWidget {
             subtitle: const Text('계정과 모든 데이터 영구 삭제'),
             onTap: () => _withdraw(context),
           ),
+          const Divider(height: 1),
+          // 한이음 드림업 사사문구 (필수 표기)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 32),
+            child: Text(
+              '본 애플리케이션은 과학기술정보통신부 대학디지털교육역량강화사업의 지원을 통해 '
+              '수행한 한이음 드림업 프로젝트 결과물입니다.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
+            ),
+          ),
         ],
       ),
     );
